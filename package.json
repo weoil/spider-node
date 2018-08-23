@@ -1,6 +1,6 @@
 {
-  "name": "web-spider-go",
-  "version": "0.1.0",
+  "name": "spider-node",
+  "version": "0.1.1",
   "main": "dist/index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
@@ -10,7 +10,7 @@
     "spider",
     "crawl"
   ],
-  "author": "",
+  "author": "weoil",
   "license": "ISC",
   "devDependencies": {
     "@types/node": "^10.5.2",
@@ -18,9 +18,16 @@
     "source-map-loader": "^0.2.3",
     "typescript": "^2.9.2",
     "webpack": "^4.16.2",
-    "webpack-cli": "^3.1.0"
+    "webpack-cli": "^3.1.0",
+    "webpack-node-externals": "^1.7.2"
   },
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:weoil/spider-node.git"
+  },
+  "homepage": "https://github.com/weoil/spider-node",
   "dependencies": {
+    "@types/cheerio": "^0.22.8",
     "axios": "^0.18.0",
     "cheerio": "^1.0.0-rc.2",
     "iconv-lite": "^0.4.23"

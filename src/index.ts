@@ -61,11 +61,15 @@ class Crawl extends Event implements CrawlImp {
       this.emit("open", { name });
       this.isFirstStart = false;
     }
+    const spider:SpiderImp = this.spiders[name]
     if (plan) {
       plan.timer = null;
-      this.spiders[name].plan = plan;
+      spider.plan = plan;
       this.hasPlan = true;
     }
+    const open: Function = spider.config.open;
+    open &&
+      (await open.call(spider.config, spider.config));
     this.emit("pushTask", { name, url: url });
   }
   public async test(name: string, url: string | Array<string>) {

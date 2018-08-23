@@ -1,10 +1,10 @@
-const Crawl = require("../dist/bundle.js")
-console.log(Crawl)
+const Crawl = require("../dist/index.js");
+console.log(Crawl);
 
 let cl = {
   name: "caoliu",
-  maxConnect: 1,
-  delay: 3000,
+  maxConnect: 0,
+  // delay: 3000,
   http: {
     proxy: {
       host: "127.0.0.1",
@@ -18,31 +18,31 @@ let cl = {
     {
       test: /htm_data\/16\/\d*\/\d*\.html/,
       parse: async (url, content, selector) => {
-        const $ = selector
+        const $ = selector;
         let inputs = $("input[type=image]"),
-          imgs = []
-        let unType = [/www1\.wi\.to/]
+          imgs = [];
+        let unType = [/www1\.wi\.to/];
         inputs.each(i => {
-          let ipt = inputs[i]
-          let img = ipt.attribs["src"]
+          let ipt = inputs[i];
+          let img = ipt.attribs["src"];
           if (!img) {
-            img = ipt.attribs["data-src"]
+            img = ipt.attribs["data-src"];
           }
-          let flag = true
+          let flag = true;
           for (let r of unType) {
             if (r.test(img)) {
-              flag = false
-              break
+              flag = false;
+              break;
             }
           }
-          flag && imgs.push(img)
-        })
+          flag && imgs.push(img);
+        });
         let title = $("h4")
           .eq(0)
-          .text()
-        title ? (title = title.replace(/\[[^\]]{1,8}\]/g, "").trim()) : void 0
+          .text();
+        title ? (title = title.replace(/\[[^\]]{1,8}\]/g, "").trim()) : void 0;
         if (!title || (title === "" && !imgs.length)) {
-          return
+          return;
         }
         const item = {
           url: url,
@@ -50,25 +50,25 @@ let cl = {
           images: imgs,
           length: imgs.length
           // spiderDate: spiderDate
-        }
-        return item
+        };
+        return item;
       },
       pipeline: async item => {
-        console.log(item.url)
+        console.log(item.title);
       }
     }
   ],
   downloadMiddleware: [
     (url, config) => {
       if (config.overList.has(url)) {
-        return false
+        return false;
       }
-      config.overList.add(url)
+      config.overList.add(url);
     }
   ]
-}
-let C = new Crawl()
-C.registry("caoliu", cl)
+};
+let C = new Crawl();
+C.registry("caoliu", cl);
 // C.test("caoliu", "http://www.t66y.com/htm_data/16/1807/3212889.html")
 C.start("caoliu", "http://www.t66y.com/thread0806.php?fid=16&search=&page=2", {
   interval: 10000,
@@ -78,9 +78,5 @@ C.start("caoliu", "http://www.t66y.com/thread0806.php?fid=16&search=&page=2", {
     /thread0806\.php\?fid=[\d]*&search=&page=[2]{1}$/
   ],
   url: ["http://www.t66y.com/thread0806.php?fid=16&search=&page=2"]
-})
-let count = 0
-C.use("plan", name => {
-  count += 1
-  console.log("plan:", name, count)
-})
+});
+let count = 0;
