@@ -1,16 +1,14 @@
-const Crawl = require("../dist/index.js");
+import Crawl from "../dist/index.js";
 console.log(Crawl);
 
 let cl = {
   name: "caoliu",
   maxConnect: 0,
-  // delay: 3000,
+  delay: 1000,
   http: {
-    proxy: {
-      host: "127.0.0.1",
-      port: 1080
-    }
+    proxy: "http://127.0.0.1:1080"
   },
+  log: true,
   rules: [
     {
       test: /thread0806\.php\?fid=[\d]*&search=&page=[\d]*/
@@ -60,23 +58,20 @@ let cl = {
   ],
   downloadMiddleware: [
     (url, config) => {
-      if (config.overList.has(url)) {
-        return false;
-      }
-      config.overList.add(url);
+      console.log("url->downloadMiddleware", url);
     }
   ]
 };
 let C = new Crawl();
 C.registry("caoliu", cl);
 // C.test("caoliu", "http://www.t66y.com/htm_data/16/1807/3212889.html")
-C.start("caoliu", "http://www.t66y.com/thread0806.php?fid=16&search=&page=2", {
-  interval: 10000,
-  findlist: [/thread0806\.php\?fid=[\d]*&search=&page=[2]{1}$/],
-  include: [
-    /htm_data\/16\/\d*\/\d*\.html/,
-    /thread0806\.php\?fid=[\d]*&search=&page=[2]{1}$/
-  ],
-  url: ["http://www.t66y.com/thread0806.php?fid=16&search=&page=2"]
-});
-let count = 0;
+C.start("caoliu", "http://www.t66y.com/thread0806.php?fid=16&search=&page=2");
+// C.start("caoliu", "http://www.t66y.com/thread0806.php?fid=16&search=&page=2", {
+//   interval: 10000,
+//   findlist: [/thread0806\.php\?fid=[\d]*&search=&page=[2]{1}$/],
+//   include: [
+//     /htm_data\/16\/\d*\/\d*\.html/,
+//     /thread0806\.php\?fid=[\d]*&search=&page=[2]{1}$/
+//   ],
+//   url: ["http://www.t66y.com/thread0806.php?fid=16&search=&page=2"]
+// });

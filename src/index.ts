@@ -3,6 +3,9 @@ import * as Url from "url";
 import * as Cheerio from "cheerio";
 import Http from "./http";
 import { testExist } from "./util/match";
+import { CrawlImp, CrawlConfig, SpiderImp, spiderConfig } from "./types/spider";
+import Logger from "./util/logConfig";
+const log: Logger.Logger = Logger.getLogger("spider");
 class Crawl extends Event implements CrawlImp {
   config: CrawlConfig;
   middleware: { [key: string]: any[] } = {};
@@ -25,10 +28,12 @@ class Crawl extends Event implements CrawlImp {
     this.on("parse", this._parse);
     this.on("download", this._download);
     this.on("downloadCompletion", this._downloadCompletion);
+    this.on("error", () => {});
+    this.on("log", this.spiderLog);
   }
-  public use(fn: Function, options: any): void {
-    if (typeof fn === "function") {
-      fn(this, options);
+  private spiderLog(spider: any, ...args: Array<any>) {
+    if (spider.config.log) {
+      log.info("", ...args);
     }
   }
   public registry(name: string, config: spiderConfig) {
@@ -47,7 +52,11 @@ class Crawl extends Event implements CrawlImp {
       parseCount: 0,
       tasklist: new Array(),
       http: new Http(
-        { ...config.http, overList: config.overList },
+        {
+          http: config.http,
+          overList: config.overList,
+          norepeat: config.norepeat || true
+        },
         config.downloadMiddleware,
         config.errorMiddleware
       )
@@ -61,15 +70,14 @@ class Crawl extends Event implements CrawlImp {
       this.emit("open", { name });
       this.isFirstStart = false;
     }
-    const spider:SpiderImp = this.spiders[name]
+    const spider: SpiderImp = this.spiders[name];
     if (plan) {
       plan.timer = null;
       spider.plan = plan;
       this.hasPlan = true;
     }
     const open: Function = spider.config.open;
-    open &&
-      (await open.call(spider.config, spider.config));
+    open && (await open.call(spider.config, spider.config));
     this.emit("pushTask", { name, url: url });
   }
   public async test(name: string, url: string | Array<string>) {
@@ -80,10 +88,17 @@ class Crawl extends Event implements CrawlImp {
     let name = data["name"],
       url = data["url"];
     const spider = this.spiders[name];
+    this.emit("log", spider, `${name} --download-->${url}`);
     let content = await spider.http.request(url);
     this.emit("downloadCompletion", { name, url });
     if (content instanceof Error) {
+      this.emit(
+        "log",
+        spider,
+        `${name} --download Error-->${url} --->${content}`
+      );
       this.emit("error", { name, error: content });
+      this._callMiddleware(spider.config.errorMiddleware, content);
     } else if (content) {
       this.emit("parse", { name, url, content });
     }
@@ -92,9 +107,14 @@ class Crawl extends Event implements CrawlImp {
     let name = data["name"],
       url = data["url"],
       content = data["content"];
+
     const spider = this.spiders[name],
       rules = spider.config.rules,
       urls: Array<any> = [];
+    if (content.length < 1000) {
+      this.emit("log", spider, `${name} --html < 1000 byte-->${url}`);
+    }
+    this.emit("log", spider, `${name} --parse-->${url}`);
     spider.parseCount += 1;
     let parse: Function, pipeline: Function;
     for (let rule of rules) {
@@ -102,7 +122,6 @@ class Crawl extends Event implements CrawlImp {
         continue;
       }
       const regexp = new RegExp(rule.test, "g");
-
       if (regexp.test(url)) {
         parse = rule.parse;
         pipeline = rule.pipeline;
@@ -113,10 +132,14 @@ class Crawl extends Event implements CrawlImp {
       ) {
         continue;
       }
-      let turl = content.match(regexp);
-      Array.isArray(turl) &&
-        turl.forEach(u => {
-          u = Url.resolve(url, u);
+      let matchUrls = content.match(regexp);
+      Array.isArray(matchUrls) &&
+        matchUrls.forEach(u => {
+          let parentUrl = url;
+          if (rule.baseUrl) {
+            parentUrl = rule.baseUrl;
+          }
+          u = Url.resolve(parentUrl, u);
           if (!urls.includes(u)) {
             urls.push(u);
           }
@@ -133,15 +156,18 @@ class Crawl extends Event implements CrawlImp {
           Cheerio.load(content),
           spider.config
         );
-        pipeline && (await pipeline.call(spider.config, item, spider.config));
+        pipeline &&
+          item &&
+          (await pipeline.call(spider.config, item, spider.config));
       }
     } catch (e) {
-      console.log(e);
+      log.error(e);
       this._callMiddleware(spider.config.errorMiddleware, e);
       this.emit("error", { name, error: e });
     }
     spider.parseCount -= 1;
     this.emit("finished", { name, url, item });
+    this.emit("log", spider, `${name} --finished-->${url}`);
   }
   private async _finished(data: any) {
     let name = data["name"];
@@ -237,8 +263,5 @@ class Crawl extends Event implements CrawlImp {
       cb(...args);
     }
   }
-}
-if (module && module.exports) {
-  module.exports = Crawl;
 }
 export default Crawl;

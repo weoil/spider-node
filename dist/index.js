@@ -1,1 +1,414 @@
-module.exports=function(t){var e={};function r(n){if(e[n])return e[n].exports;var i=e[n]={i:n,l:!1,exports:{}};return t[n].call(i.exports,i,i.exports,r),i.l=!0,i.exports}return r.m=t,r.c=e,r.d=function(t,e,n){r.o(t,e)||Object.defineProperty(t,e,{enumerable:!0,get:n})},r.r=function(t){"undefined"!=typeof Symbol&&Symbol.toStringTag&&Object.defineProperty(t,Symbol.toStringTag,{value:"Module"}),Object.defineProperty(t,"__esModule",{value:!0})},r.t=function(t,e){if(1&e&&(t=r(t)),8&e)return t;if(4&e&&"object"==typeof t&&t&&t.__esModule)return t;var n=Object.create(null);if(r.r(n),Object.defineProperty(n,"default",{enumerable:!0,value:t}),2&e&&"string"!=typeof t)for(var i in t)r.d(n,i,function(e){return t[e]}.bind(null,i));return n},r.n=function(t){var e=t&&t.__esModule?function(){return t.default}:function(){return t};return r.d(e,"a",e),e},r.o=function(t,e){return Object.prototype.hasOwnProperty.call(t,e)},r.p="",r(r.s=0)}([function(t,e,r){"use strict";(function(t){var n=this&&this.__extends||function(){var t=Object.setPrototypeOf||{__proto__:[]}instanceof Array&&function(t,e){t.__proto__=e}||function(t,e){for(var r in e)e.hasOwnProperty(r)&&(t[r]=e[r])};return function(e,r){function n(){this.constructor=e}t(e,r),e.prototype=null===r?Object.create(r):(n.prototype=r.prototype,new n)}}(),i=this&&this.__assign||Object.assign||function(t){for(var e,r=1,n=arguments.length;r<n;r++)for(var i in e=arguments[r])Object.prototype.hasOwnProperty.call(e,i)&&(t[i]=e[i]);return t},o=this&&this.__awaiter||function(t,e,r,n){return new(r||(r=Promise))(function(i,o){function s(t){try{u(n.next(t))}catch(t){o(t)}}function a(t){try{u(n.throw(t))}catch(t){o(t)}}function u(t){t.done?i(t.value):new r(function(e){e(t.value)}).then(s,a)}u((n=n.apply(t,e||[])).next())})},s=this&&this.__generator||function(t,e){var r,n,i,o,s={label:0,sent:function(){if(1&i[0])throw i[1];return i[1]},trys:[],ops:[]};return o={next:a(0),throw:a(1),return:a(2)},"function"==typeof Symbol&&(o[Symbol.iterator]=function(){return this}),o;function a(o){return function(a){return function(o){if(r)throw new TypeError("Generator is already executing.");for(;s;)try{if(r=1,n&&(i=2&o[0]?n.return:o[0]?n.throw||((i=n.return)&&i.call(n),0):n.next)&&!(i=i.call(n,o[1])).done)return i;switch(n=0,i&&(o=[2&o[0],i.value]),o[0]){case 0:case 1:i=o;break;case 4:return s.label++,{value:o[1],done:!1};case 5:s.label++,n=o[1],o=[0];continue;case 7:o=s.ops.pop(),s.trys.pop();continue;default:if(!(i=(i=s.trys).length>0&&i[i.length-1])&&(6===o[0]||2===o[0])){s=0;continue}if(3===o[0]&&(!i||o[1]>i[0]&&o[1]<i[3])){s.label=o[1];break}if(6===o[0]&&s.label<i[1]){s.label=i[1],i=o;break}if(i&&s.label<i[2]){s.label=i[2],s.ops.push(o);break}i[2]&&s.ops.pop(),s.trys.pop();continue}o=e.call(t,s)}catch(t){o=[6,t],n=0}finally{r=i=0}if(5&o[0])throw o[1];return{value:o[0]?o[1]:void 0,done:!0}}([o,a])}}};Object.defineProperty(e,"__esModule",{value:!0});var a=r(2),u=r(3),c=r(4),l=r(5),f=r(8),p=function(t){function e(e){void 0===e&&(e={});var r=t.call(this)||this;return r.middleware={},r.isFirstStart=!0,r.runCount=0,r.isTest=!1,r.hasPlan=!1,r.spiders={},r.config=i({maxConnect:0},e),r.init(),r}return n(e,t),e.prototype.init=function(){this.on("pushTask",this._pushTask),this.on("finished",this._finished),this.on("parse",this._parse),this.on("download",this._download),this.on("downloadCompletion",this._downloadCompletion)},e.prototype.use=function(t,e){"function"==typeof t&&t(this,e)},e.prototype.registry=function(t,e){if(!t)throw new Error("You need to specify spider a name");if(!e)throw new Error("You need to specify spider a config");if(this.spiders[t])throw new Error("Already has a spider named "+t);e.delay&&(e.maxConnect=1),e.overList||(e.overList=new Set),this.spiders[t]={config:e,runCount:0,parseCount:0,tasklist:new Array,http:new l.default(i({},e.http,{overList:e.overList}),e.downloadMiddleware,e.errorMiddleware)}},e.prototype.start=function(t,e,r){return o(this,void 0,void 0,function(){var n,i;return s(this,function(o){switch(o.label){case 0:if(!this.spiders[t])throw new Error("No spider name is "+t);if(!e||Array.isArray(e)&&!e.length)throw new Error(t+" need to start url or urls");return this.isFirstStart&&(this.emit("open",{name:t}),this.isFirstStart=!1),n=this.spiders[t],r&&(r.timer=null,n.plan=r,this.hasPlan=!0),i=n.config.open,i?[4,i.call(n.config,n.config)]:[3,2];case 1:o.sent(),o.label=2;case 2:return this.emit("pushTask",{name:t,url:e}),[2]}})})},e.prototype.test=function(t,e){return o(this,void 0,void 0,function(){return s(this,function(r){switch(r.label){case 0:return this.isTest=!0,[4,this.start(t,e)];case 1:return r.sent(),[2]}})})},e.prototype._download=function(t){return o(this,void 0,void 0,function(){var e,r,n;return s(this,function(i){switch(i.label){case 0:return e=t.name,r=t.url,[4,this.spiders[e].http.request(r)];case 1:return n=i.sent(),this.emit("downloadCompletion",{name:e,url:r}),n instanceof Error?this.emit("error",{name:e,error:n}):n&&this.emit("parse",{name:e,url:r,content:n}),[2]}})})},e.prototype._parse=function(t){return o(this,void 0,void 0,function(){var e,r,n,i,o,a,l,p,h,d,y,v,m,w,b;return s(this,function(s){switch(s.label){case 0:for(e=t.name,r=t.url,n=t.content,i=this.spiders[e],o=i.config.rules,a=[],i.parseCount+=1,h=0,d=o;h<d.length;h++)y=d[h],i.plan&&!f.testExist(i.plan.include,r)||((v=new RegExp(y.test,"g")).test(r)&&(l=y.parse,p=y.pipeline),this.isTest||i.plan&&!f.testExist(i.plan.findlist,r)||(m=n.match(v),Array.isArray(m)&&m.forEach(function(t){t=u.resolve(r,t),a.includes(t)||a.push(t)})));this.emit("pushTask",{name:e,url:a}),s.label=1;case 1:return s.trys.push([1,6,,7]),l?[4,l.call(i.config,r,n,c.load(n),i.config)]:[3,5];case 2:return w=s.sent(),p?[4,p.call(i.config,w,i.config)]:[3,4];case 3:s.sent(),s.label=4;case 4:s.label=5;case 5:return[3,7];case 6:return b=s.sent(),console.log(b),this._callMiddleware(i.config.errorMiddleware,b),this.emit("error",{name:e,error:b}),[3,7];case 7:return i.parseCount-=1,this.emit("finished",{name:e,url:r,item:w}),[2]}})})},e.prototype._finished=function(t){return o(this,void 0,void 0,function(){var e,r,n,i,o=this;return s(this,function(s){switch(s.label){case 0:return e=t.name,0!==(r=this.spiders[e]).runCount||r.tasklist.length||0!==r.parseCount?[3,3]:r.plan?(r.plan.timer&&clearTimeout(r.plan.timer),r.plan.timer=setTimeout(function(){o.emit("plan",{name:e}),(Array.isArray(r.plan.url)?r.plan.url:[r.plan.url]).forEach(function(t){r.config.overList.delete(t)}),o.emit("pushTask",{name:e,url:r.plan.url})},r.plan.interval),[2]):(n=r.config.close)&&"function"==typeof n?[4,r.config.close.call(r.config,r.config)]:[3,2];case 1:s.sent(),s.label=2;case 2:if(0===this.runCount&&!this.hasPlan){for(i in this.spiders)if(this.spiders[i].tasklist.length)return[2];this.emit("close",{crawl:this})}s.label=3;case 3:return[2]}})})},e.prototype._downloadCompletion=function(t){var e=t.name,r=this.spiders[e];if(r.runCount-=1,this.runCount-=1,this._checkSpider(e)&&r.tasklist.length){var n=r.tasklist.pop();n&&this.emit("pushTask",{name:e,url:n})}},e.prototype._request=function(t){var e=this,r=t.name,n=t.url;this.emit("request",{name:r,url:n});var i=this.spiders[r];i.runCount+=1,this.runCount+=1;var o=i.config.delay||0;setTimeout(function(){e.emit("download",{name:r,url:n})},o)},e.prototype._pushTask=function(t){var e=this,r=t.name,n=t.url;(Array.isArray(n)?n:[n]).forEach(function(t){t&&(e._checkSpider(r)?e._request({name:r,url:t}):e.spiders[r].tasklist.push(t))})},e.prototype._checkSpider=function(t){if(this.config.maxConnect&&this.runCount>=this.config.maxConnect)return!1;var e=this.spiders[t],r=e.config;return!(r.maxConnect&&e.runCount>=r.maxConnect)},e.prototype._callMiddleware=function(t){for(var e=[],r=1;r<arguments.length;r++)e[r-1]=arguments[r];var n=Array.isArray(t)?t:this.middleware[t];if(n)for(var i=0,o=n;i<o.length;i++){o[i].apply(void 0,e)}},e}(a);t&&t.exports&&(t.exports=p),e.default=p}).call(this,r(1)(t))},function(t,e){t.exports=function(t){return t.webpackPolyfill||(t.deprecate=function(){},t.paths=[],t.children||(t.children=[]),Object.defineProperty(t,"loaded",{enumerable:!0,get:function(){return t.l}}),Object.defineProperty(t,"id",{enumerable:!0,get:function(){return t.i}}),t.webpackPolyfill=1),t}},function(t,e){t.exports=require("events")},function(t,e){t.exports=require("url")},function(t,e){t.exports=require("cheerio")},function(t,e,r){"use strict";var n=this&&this.__assign||Object.assign||function(t){for(var e,r=1,n=arguments.length;r<n;r++)for(var i in e=arguments[r])Object.prototype.hasOwnProperty.call(e,i)&&(t[i]=e[i]);return t},i=this&&this.__awaiter||function(t,e,r,n){return new(r||(r=Promise))(function(i,o){function s(t){try{u(n.next(t))}catch(t){o(t)}}function a(t){try{u(n.throw(t))}catch(t){o(t)}}function u(t){t.done?i(t.value):new r(function(e){e(t.value)}).then(s,a)}u((n=n.apply(t,e||[])).next())})},o=this&&this.__generator||function(t,e){var r,n,i,o,s={label:0,sent:function(){if(1&i[0])throw i[1];return i[1]},trys:[],ops:[]};return o={next:a(0),throw:a(1),return:a(2)},"function"==typeof Symbol&&(o[Symbol.iterator]=function(){return this}),o;function a(o){return function(a){return function(o){if(r)throw new TypeError("Generator is already executing.");for(;s;)try{if(r=1,n&&(i=2&o[0]?n.return:o[0]?n.throw||((i=n.return)&&i.call(n),0):n.next)&&!(i=i.call(n,o[1])).done)return i;switch(n=0,i&&(o=[2&o[0],i.value]),o[0]){case 0:case 1:i=o;break;case 4:return s.label++,{value:o[1],done:!1};case 5:s.label++,n=o[1],o=[0];continue;case 7:o=s.ops.pop(),s.trys.pop();continue;default:if(!(i=(i=s.trys).length>0&&i[i.length-1])&&(6===o[0]||2===o[0])){s=0;continue}if(3===o[0]&&(!i||o[1]>i[0]&&o[1]<i[3])){s.label=o[1];break}if(6===o[0]&&s.label<i[1]){s.label=i[1],i=o;break}if(i&&s.label<i[2]){s.label=i[2],s.ops.push(o);break}i[2]&&s.ops.pop(),s.trys.pop();continue}o=e.call(t,s)}catch(t){o=[6,t],n=0}finally{r=i=0}if(5&o[0])throw o[1];return{value:o[0]?o[1]:void 0,done:!0}}([o,a])}}};Object.defineProperty(e,"__esModule",{value:!0});var s=r(6),a=r(7),u=function(){function t(t,e,r){this.config=t,this.middleware=e,this.errorMiddleware=r,this.$=s.default.create(this.config)}return t.prototype.callMiddleware=function(t,e){for(var r=[],n=2;n<arguments.length;n++)r[n-2]=arguments[n];return i(this,void 0,void 0,function(){var n,i;return o(this,function(o){switch(o.label){case 0:if(!e)return[2,!0];n=0,i=e,o.label=1;case 1:return n<i.length?[4,i[n].apply(void 0,[t].concat(r))]:[3,4];case 2:if(!1===o.sent())return[2,!1];o.label=3;case 3:return n++,[3,1];case 4:return[2]}})})},t.prototype.request=function(t){return i(this,void 0,void 0,function(){var e,r;return o(this,function(i){switch(i.label){case 0:return i.trys.push([0,3,,4]),[4,this.callMiddleware(t,this.middleware,this.config)];case 1:return!1===i.sent()?[2]:[4,this.$(n({url:t,method:"get"},this.config,{responseType:"arraybuffer"}))];case 2:return e=i.sent(),[2,this.decode(e.data,this.config.charset)];case 3:return r=i.sent(),console.log(r.message),this.callMiddleware(t,this.errorMiddleware,r),[2,r];case 4:return[2]}})})},t.prototype.decode=function(t,e){if(e)return a.decode(t,e);var r=a.decode(t,"utf8");try{e=(e=/charset\=[^"].*"|charset\="[^"].*"/.exec(r)[0]).replace("charset=","").replace(/"/g,"").replace("-","").trim()}catch(t){e="utf8"}return"utf8"===e.toLowerCase()?r:a.decode(t,e)},t}();e.default=u},function(t,e){t.exports=require("axios")},function(t,e){t.exports=require("iconv-lite")},function(t,e,r){"use strict";Object.defineProperty(e,"__esModule",{value:!0}),e.testExist=function(t,e){for(var r=0,n=Array.isArray(t)?t:[t];r<n.length;r++)if(n[r].test(e))return!0;return!1}}]);
+module.exports = (function(e) {
+  var t = {};
+  function i(r) {
+    if (t[r]) return t[r].exports;
+    var n = (t[r] = { i: r, l: !1, exports: {} });
+    return e[r].call(n.exports, n, n.exports, i), (n.l = !0), n.exports;
+  }
+  return (
+    (i.m = e),
+    (i.c = t),
+    (i.d = function(e, t, r) {
+      i.o(e, t) ||
+        Object.defineProperty(e, t, {
+          configurable: !1,
+          enumerable: !0,
+          get: r
+        });
+    }),
+    (i.r = function(e) {
+      Object.defineProperty(e, "__esModule", { value: !0 });
+    }),
+    (i.n = function(e) {
+      var t =
+        e && e.__esModule
+          ? function() {
+              return e.default;
+            }
+          : function() {
+              return e;
+            };
+      return i.d(t, "a", t), t;
+    }),
+    (i.o = function(e, t) {
+      return Object.prototype.hasOwnProperty.call(e, t);
+    }),
+    (i.p = ""),
+    (i.w = {}),
+    i((i.s = 9))
+  );
+})([
+  function(e, t, i) {
+    "use strict";
+    Object.defineProperty(t, "__esModule", { value: !0 });
+    const r = i(2);
+    r.configure({
+      appenders: { spider: { type: "console" } },
+      categories: {
+        spider: { appenders: ["spider"], level: "info" },
+        default: { appenders: ["spider"], level: "info" }
+      }
+    }),
+      (t.default = r);
+  },
+  function(e, t, i) {
+    "use strict";
+    Object.defineProperty(t, "__esModule", { value: !0 }),
+      (t.testExist = function(e, t) {
+        let i = Array.isArray(e) ? e : [e];
+        for (let e of i) if (e.test(t)) return !0;
+        return !1;
+      });
+  },
+  function(e, t) {
+    e.exports = require("log4js");
+  },
+  function(e, t) {
+    e.exports = require("iconv-lite");
+  },
+  function(e, t) {
+    e.exports = require("request-promise");
+  },
+  function(e, t, i) {
+    "use strict";
+    var r =
+      (this && this.__awaiter) ||
+      function(e, t, i, r) {
+        return new (i || (i = Promise))(function(n, s) {
+          function o(e) {
+            try {
+              l(r.next(e));
+            } catch (e) {
+              s(e);
+            }
+          }
+          function a(e) {
+            try {
+              l(r.throw(e));
+            } catch (e) {
+              s(e);
+            }
+          }
+          function l(e) {
+            e.done
+              ? n(e.value)
+              : new i(function(t) {
+                  t(e.value);
+                }).then(o, a);
+          }
+          l((r = r.apply(e, t || [])).next());
+        });
+      };
+    Object.defineProperty(t, "__esModule", { value: !0 });
+    const n = i(4),
+      s = i(3);
+    i(0).default.getLogger("spider");
+    function o(e, t) {
+      return r(this, void 0, void 0, function*() {
+        if (t.norepeat) {
+          let i = !t.overList.has(e);
+          return t.overList.add(e), i;
+        }
+      });
+    }
+    t.default = class {
+      constructor(e, t, i) {
+        (this.config = e),
+          (this.middleware = [...t, o]),
+          (this.errorMiddleware = i);
+      }
+      callMiddleware(e, t, ...i) {
+        return r(this, void 0, void 0, function*() {
+          if (!t) return !0;
+          for (const r of t) if (!1 === (yield r(e, ...i))) return !1;
+        });
+      }
+      request(e) {
+        return r(this, void 0, void 0, function*() {
+          try {
+            if (
+              !1 ===
+              (yield this.callMiddleware(e, this.middleware, this.config))
+            )
+              return;
+            let t = yield n.get(
+              e,
+              Object.assign({}, this.config.http, { encoding: null, jar: !1 })
+            );
+            return this.decode(t, this.config.charset);
+          } catch (e) {
+            return e;
+          }
+        });
+      }
+      decode(e, t) {
+        if (t) return s.decode(e, t);
+        let i = s.decode(e, "utf8");
+        try {
+          t = (t = /charset\=[^"].*"|charset\="[^"].*"/.exec(i)[0])
+            .replace("charset=", "")
+            .replace(/"/g, "")
+            .replace("-", "")
+            .trim();
+        } catch (e) {
+          t = "utf8";
+        }
+        return "utf8" === t.toLowerCase() ? i : s.decode(e, t);
+      }
+    };
+  },
+  function(e, t) {
+    e.exports = require("cheerio");
+  },
+  function(e, t) {
+    e.exports = require("url");
+  },
+  function(e, t) {
+    e.exports = require("events");
+  },
+  function(e, t, i) {
+    "use strict";
+    var r =
+      (this && this.__awaiter) ||
+      function(e, t, i, r) {
+        return new (i || (i = Promise))(function(n, s) {
+          function o(e) {
+            try {
+              l(r.next(e));
+            } catch (e) {
+              s(e);
+            }
+          }
+          function a(e) {
+            try {
+              l(r.throw(e));
+            } catch (e) {
+              s(e);
+            }
+          }
+          function l(e) {
+            e.done
+              ? n(e.value)
+              : new i(function(t) {
+                  t(e.value);
+                }).then(o, a);
+          }
+          l((r = r.apply(e, t || [])).next());
+        });
+      };
+    Object.defineProperty(t, "__esModule", { value: !0 });
+    const n = i(8),
+      s = i(7),
+      o = i(6),
+      a = i(5),
+      l = i(1),
+      u = i(0).default.getLogger("spider");
+    t.default = class extends n {
+      constructor(e = {}) {
+        super(),
+          (this.middleware = {}),
+          (this.isFirstStart = !0),
+          (this.runCount = 0),
+          (this.isTest = !1),
+          (this.hasPlan = !1),
+          (this.spiders = {}),
+          (this.config = Object.assign({ maxConnect: 0 }, e)),
+          this.init();
+      }
+      init() {
+        this.on("pushTask", this._pushTask),
+          this.on("finished", this._finished),
+          this.on("parse", this._parse),
+          this.on("download", this._download),
+          this.on("downloadCompletion", this._downloadCompletion),
+          this.on("error", () => {}),
+          this.on("log", this.spiderLog);
+      }
+      spiderLog(e, ...t) {
+        e.config.log && u.info("", ...t);
+      }
+      registry(e, t) {
+        if (!e) throw new Error("You need to specify spider a name");
+        if (!t) throw new Error("You need to specify spider a config");
+        if (this.spiders[e]) throw new Error(`Already has a spider named ${e}`);
+        t.delay && (t.maxConnect = 1),
+          t.overList || (t.overList = new Set()),
+          (this.spiders[e] = {
+            config: t,
+            runCount: 0,
+            parseCount: 0,
+            tasklist: new Array(),
+            http: new a.default(
+              {
+                http: t.http,
+                overList: t.overList,
+                norepeat: t.norepeat || !0
+              },
+              t.downloadMiddleware,
+              t.errorMiddleware
+            )
+          });
+      }
+      start(e, t, i) {
+        return r(this, void 0, void 0, function*() {
+          if (!this.spiders[e]) throw new Error(`No spider name is ${e}`);
+          if (!t || (Array.isArray(t) && !t.length))
+            throw new Error(`${e} need to start url or urls`);
+          this.isFirstStart &&
+            (this.emit("open", { name: e }), (this.isFirstStart = !1));
+          const r = this.spiders[e];
+          i && ((i.timer = null), (r.plan = i), (this.hasPlan = !0));
+          const n = r.config.open;
+          n && (yield n.call(r.config, r.config)),
+            this.emit("pushTask", { name: e, url: t });
+        });
+      }
+      test(e, t) {
+        return r(this, void 0, void 0, function*() {
+          (this.isTest = !0), yield this.start(e, t);
+        });
+      }
+      _download(e) {
+        return r(this, void 0, void 0, function*() {
+          let t = e.name,
+            i = e.url;
+          const r = this.spiders[t];
+          this.emit("log", r, `${t} --download--\x3e${i}`);
+          let n = yield r.http.request(i);
+          this.emit("downloadCompletion", { name: t, url: i }),
+            n instanceof Error
+              ? (this.emit(
+                  "log",
+                  r,
+                  `${t} --download Error--\x3e${i} ---\x3e${n}`
+                ),
+                this.emit("error", { name: t, error: n }),
+                this._callMiddleware(r.config.errorMiddleware, n))
+              : n && this.emit("parse", { name: t, url: i, content: n });
+        });
+      }
+      _parse(e) {
+        return r(this, void 0, void 0, function*() {
+          let t = e.name,
+            i = e.url,
+            r = e.content;
+          const n = this.spiders[t],
+            a = n.config.rules,
+            c = [];
+          let d, h, f;
+          r.length < 1e3 &&
+            this.emit("log", n, `${t} --html < 1000 byte--\x3e${i}`),
+            this.emit("log", n, `${t} --parse--\x3e${i}`),
+            (n.parseCount += 1);
+          for (let e of a) {
+            if (n.plan && !l.testExist(n.plan.include, i)) continue;
+            const t = new RegExp(e.test, "g");
+            if (
+              (t.test(i) && ((d = e.parse), (h = e.pipeline)),
+              this.isTest || (n.plan && !l.testExist(n.plan.findlist, i)))
+            )
+              continue;
+            let o = r.match(t);
+            Array.isArray(o) &&
+              o.forEach(t => {
+                let r = i;
+                e.baseUrl && (r = e.baseUrl),
+                  (t = s.resolve(r, t)),
+                  c.includes(t) || c.push(t);
+              });
+          }
+          this.emit("pushTask", { name: t, url: c });
+          try {
+            d &&
+              ((f = yield d.call(n.config, i, r, o.load(r), n.config)),
+              h && f && (yield h.call(n.config, f, n.config)));
+          } catch (e) {
+            u.error(e),
+              this._callMiddleware(n.config.errorMiddleware, e),
+              this.emit("error", { name: t, error: e });
+          }
+          (n.parseCount -= 1),
+            this.emit("finished", { name: t, url: i, item: f }),
+            this.emit("log", n, `${t} --finished--\x3e${i}`);
+        });
+      }
+      _finished(e) {
+        return r(this, void 0, void 0, function*() {
+          let t = e.name;
+          const i = this.spiders[t];
+          if (0 === i.runCount && !i.tasklist.length && 0 === i.parseCount) {
+            if (i.plan)
+              return (
+                i.plan.timer && clearTimeout(i.plan.timer),
+                void (i.plan.timer = setTimeout(() => {
+                  this.emit("plan", { name: t }),
+                    (Array.isArray(i.plan.url)
+                      ? i.plan.url
+                      : [i.plan.url]
+                    ).forEach(e => {
+                      i.config.overList.delete(e);
+                    }),
+                    this.emit("pushTask", { name: t, url: i.plan.url });
+                }, i.plan.interval))
+              );
+            const e = i.config.close;
+            if (
+              (e &&
+                "function" == typeof e &&
+                (yield i.config.close.call(i.config, i.config)),
+              0 === this.runCount && !this.hasPlan)
+            ) {
+              for (let e in this.spiders)
+                if (this.spiders[e].tasklist.length) return;
+              this.emit("close", { crawl: this });
+            }
+          }
+        });
+      }
+      _downloadCompletion(e) {
+        let t = e.name;
+        const i = this.spiders[t];
+        if (
+          ((i.runCount -= 1),
+          (this.runCount -= 1),
+          this._checkSpider(t) && i.tasklist.length)
+        ) {
+          let e = i.tasklist.pop();
+          e && this.emit("pushTask", { name: t, url: e });
+        }
+      }
+      _request(e) {
+        let t = e.name,
+          i = e.url;
+        this.emit("request", { name: t, url: i });
+        const r = this.spiders[t];
+        (r.runCount += 1), (this.runCount += 1);
+        let n = r.config.delay || 0;
+        setTimeout(() => {
+          this.emit("download", { name: t, url: i });
+        }, n);
+      }
+      _pushTask(e) {
+        let t = e.name,
+          i = e.url;
+        (Array.isArray(i) ? i : [i]).forEach(e => {
+          e &&
+            (this._checkSpider(t)
+              ? this._request({ name: t, url: e })
+              : this.spiders[t].tasklist.push(e));
+        });
+      }
+      _checkSpider(e) {
+        if (this.config.maxConnect && this.runCount >= this.config.maxConnect)
+          return !1;
+        const t = this.spiders[e],
+          i = t.config;
+        return !(i.maxConnect && t.runCount >= i.maxConnect);
+      }
+      _callMiddleware(e, ...t) {
+        let i = Array.isArray(e) ? e : this.middleware[e];
+        if (i) for (let e of i) e(...t);
+      }
+    };
+  }
+]);
