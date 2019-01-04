@@ -5,8 +5,10 @@
   "tasks": [
     {
       "type": "typescript",
-      "tsconfig": "webSpiderGo\\tsconfig.json",
-      "problemMatcher": ["$tsc"]
+      "tsconfig": "tsconfig.json",
+      "problemMatcher": [
+        "$tsc"
+      ]
     }
   ]
 }

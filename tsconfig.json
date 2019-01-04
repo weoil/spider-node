@@ -1,5 +1,7 @@
 {
   "compilerOptions": {
+    "baseUrl": ".",
+    "paths": { "*": ["types/*"] },
     "outDir": "dist",
     "sourceMap": false,
     "noImplicitAny": true,
@@ -7,7 +9,7 @@
     "target": "es6",
     "lib": ["es2015", "es2016"]
   },
-  "include": ["./src/*", "./src/**/*"],
+  "include": ["./src/*", "./src/**/*", "types/model.d.ts"],
   "exclude": ["node_modules", "**/node_modules/*"],
   "baseUrl": ".",
   "paths": {

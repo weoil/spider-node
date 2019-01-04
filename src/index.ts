@@ -1,11 +1,17 @@
-import * as Event from "events";
-import * as Url from "url";
-import * as Cheerio from "cheerio";
-import Http from "./http";
-import { testExist } from "./util/match";
-import { CrawlImp, CrawlConfig, SpiderImp, spiderConfig } from "./types/spider";
-import Logger from "./util/logConfig";
-const log: Logger.Logger = Logger.getLogger("spider");
+import * as Event from 'events';
+import * as Url from 'url';
+import * as Cheerio from 'cheerio';
+import Http from './http';
+import { testExist } from './util/match';
+import {
+  CrawlImp,
+  CrawlConfig,
+  SpiderImp,
+  spiderConfig,
+  HtmlConfig
+} from './types/spider';
+import Logger from './util/logConfig';
+const log: Logger.Logger = Logger.getLogger('spider');
 class Crawl extends Event implements CrawlImp {
   config: CrawlConfig;
   middleware: { [key: string]: any[] } = {};
@@ -23,25 +29,25 @@ class Crawl extends Event implements CrawlImp {
     this.init();
   }
   private init() {
-    this.on("pushTask", this._pushTask);
-    this.on("finished", this._finished);
-    this.on("parse", this._parse);
-    this.on("download", this._download);
-    this.on("downloadCompletion", this._downloadCompletion);
-    this.on("error", () => {});
-    this.on("log", this.spiderLog);
+    this.on('pushTask', this._pushTask);
+    this.on('finished', this._finished);
+    this.on('parse', this._parse);
+    this.on('download', this._download);
+    this.on('downloadCompletion', this._downloadCompletion);
+    this.on('error', () => {});
+    this.on('log', this.spiderLog);
   }
   private spiderLog(spider: any, ...args: Array<any>) {
     if (spider.config.log) {
-      log.info("", ...args);
+      log.info('', ...args);
     }
   }
   public registry(name: string, config: spiderConfig) {
-    if (!name) throw new Error("You need to specify spider a name");
-    if (!config) throw new Error("You need to specify spider a config");
+    if (!name) throw new Error('You need to specify spider a name');
+    if (!config) throw new Error('You need to specify spider a config');
     if (this.spiders[name])
       throw new Error(`Already has a spider named ${name}`);
-    if (config["delay"]) {
+    if (config['delay']) {
       //如果设置了延迟，就限制最大为1
       config.maxConnect = 1;
     }
@@ -57,17 +63,21 @@ class Crawl extends Event implements CrawlImp {
           overList: config.overList,
           norepeat: config.norepeat || true
         },
-        config.downloadMiddleware,
-        config.errorMiddleware
+        config.downloadMiddleware || [],
+        config.errorMiddleware || []
       )
     };
   }
-  public async start(name: string, url: string | Array<string>, plan?: any) {
+  public async start(
+    name: string,
+    url: string | Array<string> = [],
+    plan?: any
+  ) {
     if (!this.spiders[name]) throw new Error(`No spider name is ${name}`);
-    if (!url || (Array.isArray(url) && !url.length))
-      throw new Error(`${name} need to start url or urls`);
+    if (!Array.isArray(url) && url === '')
+      throw new Error(`${name} 如果提供URL,就不能为空`);
     if (this.isFirstStart) {
-      this.emit("open", { name });
+      this.emit('open', { name });
       this.isFirstStart = false;
     }
     const spider: SpiderImp = this.spiders[name];
@@ -77,51 +87,52 @@ class Crawl extends Event implements CrawlImp {
       this.hasPlan = true;
     }
     const open: Function = spider.config.open;
-    open && (await open.call(spider.config, spider.config));
-    this.emit("pushTask", { name, url: url });
+    if (open) {
+      const push = (url: Array<string> | string, config: HtmlConfig = {}) => {
+        this.emit('pushTask', { name: name, url: url, config });
+      };
+      await open.call(spider.config, spider.config, { push });
+    }
+    this.emit('pushTask', { name, url: url });
   }
-  public async test(name: string, url: string | Array<string>) {
+  public async test(name: string, url: string | Array<string> = []) {
     this.isTest = true;
     await this.start(name, url);
   }
   private async _download(data: any) {
-    let name = data["name"],
-      url = data["url"];
+    let name = data['name'],
+      url = data['url'],
+      config: HtmlConfig = data['config'];
     const spider = this.spiders[name];
-    this.emit("log", spider, `${name} --download-->${url}`);
-    let content = await spider.http.request(url);
-    this.emit("downloadCompletion", { name, url });
+    this.emit('log', spider, `${name} --download-->${url}`);
+    let content = await spider.http.request(url, config);
+    this.emit('downloadCompletion', { name, url });
     if (content instanceof Error) {
-      this.emit(
-        "log",
-        spider,
-        `${name} --download Error-->${url} --->${content}`
-      );
-      this.emit("error", { name, error: content });
+      this.emit('log', spider, `${name} --download Error-->${url}`);
+      this.emit('error', { name, error: content });
       this._callMiddleware(spider.config.errorMiddleware, content);
     } else if (content) {
-      this.emit("parse", { name, url, content });
+      this.emit('parse', { name, url, content });
     }
   }
   private async _parse(data: any) {
-    let name = data["name"],
-      url = data["url"],
-      content = data["content"];
-
+    let name = data['name'],
+      url = data['url'],
+      content = data['content'];
     const spider = this.spiders[name],
       rules = spider.config.rules,
       urls: Array<any> = [];
     if (content.length < 1000) {
-      this.emit("log", spider, `${name} --html < 1000 byte-->${url}`);
+      this.emit('log', spider, `${name} --html < 1000 byte-->${url}`);
     }
-    this.emit("log", spider, `${name} --parse-->${url}`);
+    this.emit('log', spider, `${name} --parse-->${url}`);
     spider.parseCount += 1;
     let parse: Function, pipeline: Function;
     for (let rule of rules) {
       if (spider.plan && !testExist(spider.plan.include, url)) {
         continue;
       }
-      const regexp = new RegExp(rule.test, "g");
+      const regexp = new RegExp(rule.test, 'g');
       if (regexp.test(url)) {
         parse = rule.parse;
         pipeline = rule.pipeline;
@@ -145,32 +156,35 @@ class Crawl extends Event implements CrawlImp {
           }
         });
     }
-    this.emit("pushTask", { name, url: urls });
+    this.emit('pushTask', { name, url: urls });
     let item;
     try {
       if (parse) {
+        const push = (url: Array<string> | string, config: HtmlConfig = {}) => {
+          this.emit('pushTask', { name: name, url: url, config });
+        };
         item = await parse.call(
           spider.config,
           url,
           content,
           Cheerio.load(content),
-          spider.config
+          { push }
         );
         pipeline &&
           item &&
-          (await pipeline.call(spider.config, item, spider.config));
+          (await pipeline.call(spider.config, item, { push }));
       }
     } catch (e) {
       log.error(e);
       this._callMiddleware(spider.config.errorMiddleware, e);
-      this.emit("error", { name, error: e });
+      this.emit('error', { name, error: e });
     }
     spider.parseCount -= 1;
-    this.emit("finished", { name, url, item });
-    this.emit("log", spider, `${name} --finished-->${url}`);
+    this.emit('finished', { name, url, item });
+    this.emit('log', spider, `${name} --finished-->${url}`);
   }
   private async _finished(data: any) {
-    let name = data["name"];
+    let name = data['name'];
     const spider = this.spiders[name];
     if (
       spider.runCount === 0 &&
@@ -182,19 +196,19 @@ class Crawl extends Event implements CrawlImp {
           clearTimeout(spider.plan.timer);
         }
         spider.plan.timer = setTimeout(() => {
-          this.emit("plan", { name });
+          this.emit('plan', { name });
           const urls = Array.isArray(spider.plan.url)
             ? spider.plan.url
             : [spider.plan.url];
           urls.forEach(url => {
             spider.config.overList.delete(url);
           });
-          this.emit("pushTask", { name, url: spider.plan.url });
+          this.emit('pushTask', { name, url: spider.plan.url });
         }, spider.plan.interval);
         return;
       }
       const close: Function = spider.config.close;
-      if (close && typeof close === "function") {
+      if (close && typeof close === 'function') {
         await spider.config.close.call(spider.config, spider.config);
       }
       if (this.runCount === 0 && !this.hasPlan) {
@@ -203,44 +217,46 @@ class Crawl extends Event implements CrawlImp {
             return;
           }
         }
-        this.emit("close", { crawl: this });
+        this.emit('close', { crawl: this });
       }
     }
   }
   private _downloadCompletion(data: any) {
-    let name = data["name"];
+    let name = data['name'];
     const spider = this.spiders[name];
     spider.runCount -= 1;
     this.runCount -= 1;
     if (this._checkSpider(name) && spider.tasklist.length) {
-      let url = spider.tasklist.pop();
+      let { url, config } = spider.tasklist.pop();
       if (url) {
-        this.emit("pushTask", { name, url });
+        this.emit('pushTask', { name, url, config });
       }
     }
   }
   private _request(data: any) {
-    let name = data["name"],
-      url = data["url"];
-    this.emit("request", { name, url });
+    let name = data['name'],
+      url = data['url'],
+      config = data['config'];
+    this.emit('request', { name, url, config });
     const spider = this.spiders[name];
     spider.runCount += 1;
     this.runCount += 1;
     let delay = spider.config.delay || 0;
     setTimeout(() => {
-      this.emit("download", { name, url });
+      this.emit('download', { name, url, config });
     }, delay);
   }
   private _pushTask(data: any) {
-    let name = data["name"],
-      url = data["url"];
+    let name = data['name'],
+      url = data['url'],
+      config = data['config'];
     let urls: Array<string> = Array.isArray(url) ? url : [url];
     urls.forEach(u => {
       if (!u) return;
       if (this._checkSpider(name)) {
-        this._request({ name, url: u });
+        this._request({ name, url: u, config: config });
       } else {
-        this.spiders[name].tasklist.push(u);
+        this.spiders[name].tasklist.push({ config: config, url: u });
       }
     });
   }

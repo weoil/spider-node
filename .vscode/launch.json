@@ -8,8 +8,7 @@
       "type": "node",
       "request": "launch",
       "name": "启动程序",
-      "program": "${workspaceFolder}\\dist\\index.js",
-      "preLaunchTask": "tsc: build - ${workspaceFolder}\\tsconfig.json",
+      "program": "${workspaceFolder}\\dist\\trust\\index.js",
       "outFiles": ["${workspaceFolder}/dist/**/*.js"]
     }
   ]

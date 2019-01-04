@@ -1,9 +1,9 @@
-import { EventEmitter } from "events";
+import { EventEmitter } from 'events';
 
 export interface spiderConfig {
   name: string;
   rules: Array<ruleImp>;
-  http: any;
+  http?: any;
   charset?: string;
   maxConnect?: number;
   overList?: Set<string>;
@@ -26,14 +26,19 @@ export interface planImp {
 export interface ruleImp {
   test: RegExp;
   baseUrl?: String;
-  parse?(url: string, content: string, selector: any): any;
-  pipeline?(item: any): void;
+  parse?(
+    url: string,
+    content: string,
+    selector: any,
+    methods: { push: Function }
+  ): any;
+  pipeline?(item: any,methods: { push: Function }): void;
 }
 export interface HttpImp {
   config: any;
   middleware: any[];
   errorMiddleware: any[];
-  request(url: string): any;
+  request(url: string,config:HtmlConfig): any;
 }
 export interface HttpConfig {
   http: any;
@@ -52,9 +57,13 @@ export interface CrawlImp {
   isFirstStart: boolean;
   hasPlan: boolean;
 }
+export interface HtmlConfig{
+  method?:string;
+  data?:any;
+}
 export interface SpiderImp {
   config: spiderConfig;
-  tasklist: Array<string>;
+  tasklist: Array<{url:string,config:HtmlConfig}>;
   runCount: number;
   http: HttpImp;
   plan?: planImp;

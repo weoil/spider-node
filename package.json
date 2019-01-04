@@ -13,6 +13,7 @@
   "author": "weoil",
   "license": "ISC",
   "devDependencies": {
+    "@types/mongoose": "^5.3.5",
     "@types/node": "^10.5.2",
     "awesome-typescript-loader": "^5.2.0",
     "source-map-loader": "^0.2.3",
@@ -31,6 +32,7 @@
     "cheerio": "^1.0.0-rc.2",
     "iconv-lite": "^0.4.23",
     "log4js": "^3.0.5",
+    "mongoose": "^5.4.1",
     "request": "^2.88.0",
     "request-promise": "^4.2.2"
   },
