@@ -1,71 +1,156 @@
-import * as rp from 'request-promise';
-import * as iconv from 'iconv-lite';
-import { HttpImp, HttpConfig, HtmlConfig } from './types/spider';
-import Logger from './util/logConfig';
-const log: Logger.Logger = Logger.getLogger('spider');
-async function RemoveRepeatMiddleware(url: string, config: any) {
-  if (config.norepeat&&config.method!=='POST') {
-    let flag = !config.overList.has(url);
-    config.overList.add(url);
-    return flag;
-  }
+import { EventEmitter } from 'events'
+import * as iconv from 'iconv-lite'
+import rp, { del } from 'request-promise'
+import { ISpider, NetWork } from '../types/spider'
+import NoRepeatMid from './middleware/repeat'
+interface IHttpTask {
+  url: string
+  config: NetWork.Config
 }
-
-class Http implements HttpImp {
-  config: any;
-  middleware: any[];
-  errorMiddleware: any[];
-  constructor(config: HttpConfig, middleware?: any[], errorMiddleware?: any[]) {
-    this.config = config;
-    this.middleware = [...middleware, RemoveRepeatMiddleware];
-    this.errorMiddleware = errorMiddleware;
+class Http extends EventEmitter implements NetWork.Http {
+  public static clone(http: Http): Http {
+    return new Http(http.baseConfig, http.middlewares)
   }
-  private async callMiddleware(url: string, middleware: any[], ...args: any[]) {
-    if (!middleware) return true;
-    for (const mid of middleware) {
-      let result = await mid(url, ...args);
-      if (result === false) return false;
+  public delay: number = 0
+  public overlist: Set<string> = new Set()
+  public maxConnect: number = Infinity
+  public connect: number = 0
+  public middlewares: ISpider.DownloadMiddleware[] = []
+  public timer: NodeJS.Timeout | null = null
+  public baseConfig: NetWork.Config = {}
+  public $system: { [key: string]: any } = {}
+  private queue: IHttpTask[] = []
+  constructor(
+    config: ISpider.Http = {
+      repeat: false
+    },
+    middlewares?: ISpider.DownloadMiddleware[]
+  ) {
+    super()
+    const cfg = (this.baseConfig = { ...this.baseConfig, ...config })
+    if (cfg.maxConnect) {
+      this.maxConnect = cfg.maxConnect
+      delete cfg.maxConnect
+    }
+    if (cfg.delay) {
+      this.maxConnect = 1
+      this.delay = cfg.delay
+      delete cfg.delay
+    }
+    if (!cfg.repeat) {
+      this.middlewares.push(NoRepeatMid)
+      delete cfg.repeat
+    }
+    if (cfg.$system) {
+      this.$system = cfg.$system
+      delete cfg.$system
+    }
+    if (middlewares) {
+      this.middlewares = [...this.middlewares, ...middlewares]
     }
   }
-  async request(url: string, config: HtmlConfig) {
+  public ifInsert(): boolean {
+    // console.log(this.connect, this.maxConnect, this.queue.length)
+    if (this.connect < this.maxConnect) {
+      return true
+    }
+    return false
+  }
+  public async push(
+    url: string,
+    config: NetWork.Config = {},
+    priority: boolean = false
+  ): Promise<any> {
+    if (this.ifInsert()) {
+      this.run(url, config)
+      return
+    }
+    const queue = this.queue
+    if (priority) {
+      queue.unshift({ url, config })
+    } else {
+      queue.push({ url, config })
+    }
+  }
+  public async run(url: string, config: NetWork.Config = {}): Promise<any> {
+    this.connect++
     try {
-      let result = await this.callMiddleware(url, this.middleware, {...config,...this.config});
-      if (result === false) return;
-      if (!config) config = {};
-      let res = await rp({
+      config = { jar: false, encoding: null, ...this.baseConfig, ...config }
+      const $config: NetWork.Config | false = this.callMiddleware({
         url,
-        method: 'GET',
-        ...this.config.http,
         ...config,
-        encoding: null,
-        jar: false
-      });
-      let data = this.decode(res, this.config['charset']);
-      return data;
-    } catch (e) {
-      return e;
+        $system: this.$system
+      })
+      if ($config === false) {
+        throw new Error('middleware return false')
+      }
+      const result = await rp(url, $config)
+      const data: NetWork.Result = {
+        url,
+        config,
+        data: result
+      }
+      if (!config.encoding) {
+        const charset = config.meta && config.meta.charset
+        data.data = this.decode(result, charset)
+      }
+      this.emit('complete', data)
+    } catch (error) {
+      this.emit('error', { url, config, error })
+    } finally {
+      if (this.delay) {
+        this.timer = setTimeout(() => {
+          if (this.timer) {
+            clearTimeout(this.timer)
+            this.timer = null
+          }
+          this.complete()
+        }, this.delay)
+      } else {
+        this.complete()
+      }
     }
   }
-  public decode(buffer: any, charset?: string) {
-    if (charset) {
-      return iconv.decode(buffer, charset);
+  public callMiddleware(config: NetWork.Config): NetWork.Config | false {
+    let c: NetWork.Config | false = { ...config }
+    for (const fn of this.middlewares) {
+      c = fn(c)
+      if (c === false) {
+        break
+      }
     }
-    let tmp = iconv.decode(buffer, 'utf8');
+    return c
+  }
+  public decode(buffer: Buffer, charset?: any) {
+    if (charset) {
+      return iconv.decode(buffer, charset)
+    }
+    const tmp = iconv.decode(buffer, 'utf8')
     try {
-      charset = /charset\=[^"].*"|charset\="[^"].*"/.exec(tmp)[0];
+      charset = /charset\=[^"].*"|charset\="[^"].*"/.exec(tmp)
       charset = charset
         .replace('charset=', '')
         .replace(/"/g, '')
         .replace('-', '')
-        .trim();
+        .trim()
     } catch (e) {
-      charset = 'utf8';
+      charset = 'utf8'
     }
     if (charset.toLowerCase() === 'utf8') {
-      return tmp;
+      return tmp
     }
-    return iconv.decode(buffer, charset);
+    return iconv.decode(buffer, charset)
+  }
+  private complete(): void {
+    this.connect--
+    while (this.ifInsert()) {
+      const task = this.queue.shift()
+      if (task) {
+        this.push(task.url, task.config)
+      } else {
+        break
+      }
+    }
   }
 }
-
-export default Http;
+export default Http

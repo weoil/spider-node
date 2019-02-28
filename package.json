@@ -1,44 +1,34 @@
 {
   "name": "spider-node",
-  "version": "0.2.151",
-  "main": "dist/index.js",
+  "version": "0.3.0",
+  "description": "",
+  "main": "./dist/index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "webpack --config webpack.config.js"
+    "dev": "concurrently \"npm run dev:build\" \"npm run dev:watch\"",
+    "dev:watch": "nodemon ./dist/index.js",
+    "dev:build": "webpack --config ./config/wp.test.config.js --watch --progress",
+    "build": "webpack --config ./config/wp.product.config.js --progress",
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "keywords": [
-    "spider",
-    "crawl"
-  ],
-  "author": "weoil",
+  "author": "",
   "license": "ISC",
   "devDependencies": {
-    "@types/mongoose": "^5.3.5",
-    "@types/node": "^10.5.2",
-    "awesome-typescript-loader": "^5.2.0",
-    "source-map-loader": "^0.2.3",
-    "typescript": "^2.9.2",
-    "webpack": "^4.16.2",
-    "webpack-cli": "^3.1.0",
+    "@types/cheerio": "^0.22.10",
+    "@types/request": "^2.48.1",
+    "concurrently": "^4.1.0",
+    "nodemon": "^1.18.10",
+    "ts-loader": "^5.3.3",
+    "typescript": "^3.3.3333",
+    "webpack": "^4.29.3",
+    "webpack-cli": "^3.2.3",
+    "webpack-merge": "^4.2.1",
     "webpack-node-externals": "^1.7.2"
   },
-  "repository": {
-    "type": "git",
-    "url": "git@github.com:weoil/spider-node.git"
-  },
-  "homepage": "https://github.com/weoil/spider-node",
   "dependencies": {
-    "@types/cheerio": "^0.22.8",
     "cheerio": "^1.0.0-rc.2",
-    "iconv-lite": "^0.4.23",
-    "log4js": "^3.0.5",
-    "mongoose": "^5.4.1",
+    "iconv-lite": "^0.4.24",
     "request": "^2.88.0",
-    "request-promise": "^4.2.2"
+    "request-promise": "^4.2.4"
   },
-  "directories": {
-    "test": "test"
-  },
-  "description": "",
-  "types": "./src/types/spider.d.ts"
+  "types": "./src/index.ts"
 }

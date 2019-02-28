@@ -1,5 +1,5 @@
 export = rp;
-declare function rp(options: any): any;
+declare function rp(uri: any, options: any, callback?: any): any;
 declare namespace rp {
   class Request {
     static debug: any;
@@ -13,7 +13,7 @@ declare namespace rp {
     cancel(...args: any[]): any;
     debug(...args: any[]): void;
     destroy(): void;
-    emit(type: any, ...args: any[]): any;
+    emit(type: any, args: any): any;
     enableUnixSocket(): void;
     end(chunk: any): void;
     eventNames(): any;
@@ -30,6 +30,7 @@ declare namespace rp {
     listeners(type: any): any;
     multipart(multipart: any): any;
     oauth(_oauth: any): any;
+    off(type: any, listener: any): any;
     on(type: any, listener: any): any;
     onRequestError(error: any): void;
     onRequestResponse(response: any): void;
@@ -41,6 +42,7 @@ declare namespace rp {
     prependOnceListener(type: any, listener: any): any;
     promise(): any;
     qs(q: any, clobber: any): any;
+    rawListeners(type: any): any;
     readResponseBody(response: any): void;
     removeAllListeners(type: any, ...args: any[]): any;
     removeListener(type: any, listener: any): any;
@@ -57,7 +59,7 @@ declare namespace rp {
   function defaults(options: any, requester: any): any;
   function del(uri: any, options: any, callback: any): any;
   function forever(agentOptions: any, optionsArg: any): any;
-  function get(uri: any, options: any, callback?: any): any;
+  function get(uri: any, options: any, callback: any): any;
   function head(uri: any, options: any, callback: any): any;
   function initParams(uri: any, options: any, callback: any): any;
   function jar(store: any): any;
