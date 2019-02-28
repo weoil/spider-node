@@ -1,8 +1,9 @@
+import NoRepeatMid from '@/middleware/repeat'
+import { ISpider, NetWork } from '@@/types/spider'
 import { EventEmitter } from 'events'
-import * as iconv from 'iconv-lite'
-import rp, { del } from 'request-promise'
-import { ISpider, NetWork } from '../types/spider'
-import NoRepeatMid from './middleware/repeat'
+import iconv from 'iconv-lite'
+import rp from 'request-promise'
+
 interface IHttpTask {
   url: string
   config: NetWork.Config
@@ -150,6 +151,9 @@ class Http extends EventEmitter implements NetWork.Http {
       } else {
         break
       }
+    }
+    if (this.connect === 0 && this.queue.length === 0) {
+      this.emit('completeAll')
     }
   }
 }

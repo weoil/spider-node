@@ -1,5 +1,5 @@
 import * as request from 'request'
-import Rule from '../src/rule'
+import Rule from '@/rule'
 import Spider from '../src/spider'
 import CHttp from '../src/http'
 declare namespace ISpider {
@@ -22,14 +22,10 @@ declare namespace ISpider {
     name: string
     rules: Array<rule>
     http?: Http
-    charset?: string
-    maxConnect?: number
     overList?: Set<string>
     plan?: boolean
-    delay?: number
-    open?: () => Promise<any>
-    close?: () => Promise<any>
-    repeat?: boolean
+    open?: (spider: Spider) => Promise<any>
+    close?: (spider: Spider) => Promise<any>
     downloadMiddleware?: [DownloadMiddleware]
     errorMiddleware?: [ErrorMiddleware]
     log?: boolean

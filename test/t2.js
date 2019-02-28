@@ -1,15 +1,18 @@
-import { Spider } from '../src/index'
-
-const testConfig = {}
-
+const { Spider } = require('../dist/index')
 const spider = new Spider({
   name: 'mdn',
   http: {
-    delay: 5000,
+    // delay: 1000,
     meta: {
       a: 1
     }
   },
+  middleware: [
+    config => {
+      console.log(config)
+      return config
+    }
+  ],
   rules: [
     {
       test: /\/zh-CN\/docs\/[^"']*/,
@@ -25,4 +28,5 @@ const spider = new Spider({
     }
   ]
 })
+console.log(spider, spider.start)
 spider.start('https://developer.mozilla.org/zh-CN')

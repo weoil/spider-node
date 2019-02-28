@@ -1,4 +1,4 @@
-import { ISpider } from '../types/spider'
+import { ISpider } from '@@/types/spider'
 import Spider from './spider'
 class Crawl {
   public static create(config: ISpider.Config): Spider {

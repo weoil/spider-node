@@ -1,6 +1,6 @@
 {
   "name": "spider-node",
-  "version": "0.3.0",
+  "version": "0.3.001",
   "description": "",
   "main": "./dist/index.js",
   "scripts": {
@@ -13,6 +13,10 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
+    "@babel/core": "^7.3.4",
+    "@babel/plugin-transform-runtime": "^7.3.4",
+    "@babel/preset-env": "^7.3.4",
+    "@babel/runtime": "^7.3.4",
     "@types/cheerio": "^0.22.10",
     "@types/request": "^2.48.1",
     "concurrently": "^4.1.0",

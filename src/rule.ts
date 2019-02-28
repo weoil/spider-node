@@ -1,7 +1,7 @@
+import Spider from '@/spider'
+import { IRule, NetWork } from '@@/types/spider'
 import * as Cheerio from 'cheerio'
 import URL from 'url'
-import { IRule, NetWork } from '../types/spider'
-import Spider from './spider'
 
 // interface IRule {
 //   name: string

@@ -1,6 +1,6 @@
-import { ISpider, NetWork } from '../types/spider'
-import Http from './http'
-import Rule from './rule'
+import Http from '@/http'
+import Rule from '@/rule'
+import { ISpider, NetWork } from '@@/types/spider'
 enum Mode {
   development,
   production,
@@ -13,6 +13,9 @@ class Spider {
   private http: Http
   private mode: Mode = Mode.production
   constructor(config: ISpider.Config, http?: Http) {
+    if (!config || !config.rules) {
+      throw new Error('请填写配置项!')
+    }
     this.config = config
     if (http) {
       this.http = Http.clone(http)
@@ -22,11 +25,15 @@ class Spider {
     this.initRules(config.rules)
     this.http.on('complete', this.handler.bind(this))
     this.http.on('error', this.error.bind(this))
+    this.http.on('completeAll', this.onCompleteAll.bind(this))
   }
-  public start(urls: string[] | string, config?: NetWork.Config) {
+  public async start(urls: string[] | string, config?: NetWork.Config) {
+    if (this.config.open && typeof this.config.open === 'function') {
+      await this.config.open.call(this, this)
+    }
     this.push(urls, config)
   }
-  public dev(urls: string[] | string, config?: NetWork.Config) {
+  public test(urls: string[] | string, config?: NetWork.Config) {
     this.mode = Mode.test
     this.start(urls, config)
   }
@@ -89,6 +96,11 @@ class Spider {
       mids.forEach((fn: ISpider.ErrorMiddleware) => {
         fn.call(this, url, error, config, this)
       })
+    }
+  }
+  private onCompleteAll() {
+    if (this.config.close && typeof this.config.close === 'function') {
+      this.config.close.call(this, this)
     }
   }
   private initRules(rules: ISpider.rule[]) {

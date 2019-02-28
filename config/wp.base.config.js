@@ -14,28 +14,36 @@ module.exports = merge(
     },
     output: {
       path: resolve('dist'),
-      filename: '[name].js'
+      filename: '[name].js',
+      library: 'spider',
+      // umdNamedDefine: true,
+      libraryTarget: 'umd'
     },
     module: {
-      unknownContextCritical:false,
+      unknownContextCritical: false,
       rules: [
         {
           test: /\.ts$/,
           exclude: /node_modules/,
-          use: ['ts-loader']
+          use: [
+            {
+              loader: 'ts-loader'
+            }
+          ]
         }
       ]
     },
     resolve: {
-      alias: {},
+      alias: {
+        '@': resolve('src/'),
+        '@@': resolve('./')
+      },
       extensions: ['.js', '.ts', '.json']
     },
-    externals:[
-      nodeExternals()
-    ],
-    optimization:{
-      splitChunks:{
-        chunks:'initial',
+    externals: [nodeExternals()],
+    optimization: {
+      splitChunks: {
+        chunks: 'initial',
         name: 'common'
       }
     }
