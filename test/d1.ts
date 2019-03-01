@@ -1,13 +1,17 @@
 import { Spider } from '../src/index'
-
+import { NetWork } from '../types/spider'
 const testConfig = {}
-
+const M = new Map()
+M.set('https://developer.mozilla.org/zh-CN/docs/Web/HTML/Element/canvas', {})
 const spider = new Spider({
   name: 'mdn',
   http: {
-    delay: 5000,
+    delay: 500,
     meta: {
       a: 1
+    },
+    $system: {
+      overlist: M
     }
   },
   rules: [
@@ -21,8 +25,15 @@ const spider = new Spider({
       },
       error(url, error, c, s) {
         console.log('error', url)
+      },
+      config: {
+        expire: 10000
       }
     }
   ]
 })
+// spider.use((config: NetWork.MiddlewareConfig) => {
+//   console.log('middleware', config)
+//   return config
+// })
 spider.start('https://developer.mozilla.org/zh-CN')

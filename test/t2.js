@@ -26,7 +26,7 @@ const spider = new Spider({
         console.log('error', url)
       }
     }
-  ]
+  ],
 })
 console.log(spider, spider.start)
 spider.start('https://developer.mozilla.org/zh-CN')

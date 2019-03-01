@@ -18,7 +18,7 @@ class Rule {
   public rule: RegExp
   public config: IRule.IRuleConfig
   public parse?: IRule.IParse
-  public pipeline?: IRule.IPipeline
+  public pipelines: IRule.IPipeline[] = []
   public error?: IRule.IError
   constructor(
     name: string = 'rule',
@@ -27,14 +27,20 @@ class Rule {
       baseUrl: ''
     },
     parse?: IRule.IParse,
-    pipeline?: IRule.IPipeline,
+    pipeline?: IRule.IPipeline[] | IRule.IPipeline,
     error?: IRule.IError
   ) {
     this.name = name
     this.rule = new RegExp(rule)
     this.config = config
     this.parse = parse
-    this.pipeline = pipeline
+    if (pipeline) {
+      if (Array.isArray(pipeline)) {
+        this.pipelines = this.pipelines.concat(pipeline)
+      } else {
+        this.pipelines.push(pipeline)
+      }
+    }
     this.error = error
   }
   public match(url: string, data: string): Set<string> {
@@ -64,18 +70,27 @@ class Rule {
     if (!this.parse) {
       return
     }
-    const item = await this.parse.call(
-      context,
-      url,
-      data,
-      typeof data === 'string' ? Cheerio.load(data) : null,
-      config,
-      context
-    )
-    if (!this.pipeline) {
-      return
+    try {
+      let item = await this.parse.call(
+        context,
+        url,
+        data,
+        typeof data === 'string' ? Cheerio.load(data) : null,
+        config,
+        context
+      )
+      if (!this.pipelines.length) {
+        return
+      }
+      for (const p of this.pipelines) {
+        item = await p.call(context, item, context)
+        if (item === false) {
+          break
+        }
+      }
+    } catch (err) {
+      this.callError(url, err, config, context)
     }
-    await this.pipeline.call(context, item, context)
   }
   public callError(
     url: string,

@@ -75,20 +75,34 @@ class Http extends EventEmitter implements NetWork.Http {
   }
   public async run(url: string, config: NetWork.Config = {}): Promise<any> {
     this.connect++
+    let jump = false
     try {
-      config = { jar: false, encoding: null, ...this.baseConfig, ...config }
-      const $config: NetWork.Config | false = this.callMiddleware({
+      let $config: NetWork.Config | false = {
+        jar: false,
+        encoding: null,
+        ...this.baseConfig,
+        ...config
+      }
+      const system = this.$system
+      $config = this.callMiddleware({
         url,
         ...config,
-        $system: this.$system
+        $rule: {},
+        $system: system
       })
       if ($config === false) {
+        jump = true
         throw new Error('middleware return false')
       }
-      const result = await rp(url, $config)
+      delete $config.$system
+      delete $config.$rule
+      const result = await rp(url, config)
       const data: NetWork.Result = {
         url,
-        config,
+        config: {
+          ...this.baseConfig,
+          ...$config
+        },
         data: result
       }
       if (!config.encoding) {
@@ -99,7 +113,7 @@ class Http extends EventEmitter implements NetWork.Http {
     } catch (error) {
       this.emit('error', { url, config, error })
     } finally {
-      if (this.delay) {
+      if (this.delay && !jump) {
         this.timer = setTimeout(() => {
           if (this.timer) {
             clearTimeout(this.timer)
@@ -112,12 +126,25 @@ class Http extends EventEmitter implements NetWork.Http {
       }
     }
   }
-  public callMiddleware(config: NetWork.Config): NetWork.Config | false {
-    let c: NetWork.Config | false = { ...config }
+  public appendMiddleware(
+    fn: ISpider.DownloadMiddleware | ISpider.DownloadMiddleware[]
+  ) {
+    if (Array.isArray(fn)) {
+      this.middlewares = this.middlewares.concat(fn)
+      return
+    }
+    this.middlewares.push(fn)
+  }
+  public callMiddleware(
+    config: NetWork.MiddlewareConfig
+  ): NetWork.MiddlewareConfig | false {
+    let c: NetWork.MiddlewareConfig | false = { ...config }
     for (const fn of this.middlewares) {
-      c = fn(c)
-      if (c === false) {
-        break
+      const rc = fn(c)
+      if (rc) {
+        c = rc
+      } else if (rc === false) {
+        return false
       }
     }
     return c

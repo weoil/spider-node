@@ -1,28 +1,55 @@
 import Http from '@/http'
 import Rule from '@/rule'
-import { ISpider, NetWork } from '@@/types/spider'
+import { IRule, ISpider, NetWork } from '@@/types/spider'
+import { EventEmitter } from 'events'
 enum Mode {
   development,
   production,
   test
 }
+// type RuleCbErrorCb = ((err: Error) => void) | null
+// class RuleCb {
+//   private ecb: RuleCbErrorCb = null
+//   public register(cb: RuleCbErrorCb) {
+//     this.ecb = cb
+//   }
+//   public take(error: Error) {
+//     if (typeof this.ecb === 'function') {
+//       this.ecb(error)
+//     }
+//   }
+// }
 
-class Spider {
-  private config: ISpider.Config
+class Spider extends EventEmitter {
+  public static new(config: ISpider.Config) {
+    return new Spider(config)
+  }
+  private config: ISpider.Config = {
+    name: 'spider'
+  }
   private rules: Rule[] = []
   private http: Http
   private mode: Mode = Mode.production
+  private errorMiddlewares: ISpider.ErrorMiddleware[] = []
   constructor(config: ISpider.Config, http?: Http) {
-    if (!config || !config.rules) {
-      throw new Error('请填写配置项!')
-    }
-    this.config = config
+    super()
+    this.config = { ...this.config, ...config }
     if (http) {
       this.http = Http.clone(http)
     } else {
       this.http = new Http(config.http, config.downloadMiddleware)
     }
-    this.initRules(config.rules)
+    this.init(this.config)
+  }
+  public init(config: ISpider.Config) {
+    if (config.rules) {
+      this.initRules(config.rules)
+    }
+    if (config.errorMiddleware) {
+      this.errorMiddlewares = this.errorMiddlewares.concat(
+        config.errorMiddleware
+      )
+    }
     this.http.on('complete', this.handler.bind(this))
     this.http.on('error', this.error.bind(this))
     this.http.on('completeAll', this.onCompleteAll.bind(this))
@@ -49,8 +76,41 @@ class Spider {
       arr.push(urls)
     }
     arr.forEach((url: string) => {
-      this.http.push(url, config, priority)
+      const ruleConfig = this.getRuleConfig(url)
+      this.http.push(url, { ...config, ...ruleConfig }, priority)
     })
+  }
+  public rule(
+    name: string,
+    test: string | RegExp,
+    parse: IRule.IParse,
+    ...args: any[]
+  ): Promise<any> {
+    let config: IRule.IRuleConfig = {}
+    const c = args[args.length - 1]
+    if (typeof c === 'object') {
+      config = c
+      args.pop()
+    }
+    let rej: any
+    const p = new Promise((resolve, reject) => {
+      rej = reject
+    })
+    const rule = new Rule(
+      name,
+      test,
+      config,
+      parse,
+      args,
+      (url: string, err: Error, cfg: IRule.IRuleConfig) => {
+        rej(url, err, cfg, this)
+      }
+    )
+    this.rules.push(rule)
+    return p
+  }
+  public use(...args: ISpider.DownloadMiddleware[]): void {
+    this.http.appendMiddleware(args)
   }
   private async handler(params: {
     url: string
@@ -91,17 +151,37 @@ class Spider {
   }
   private error(params: { url: string; error: Error; config: NetWork.Config }) {
     const { url, error, config } = params
-    const mids = this.config && this.config.errorMiddleware
-    if (mids && mids.length) {
-      mids.forEach((fn: ISpider.ErrorMiddleware) => {
-        fn.call(this, url, error, config, this)
-      })
-    }
+    this.errorMiddlewares.forEach((fn: ISpider.ErrorMiddleware) => {
+      fn.call(this, url, error, config, this)
+    })
   }
   private onCompleteAll() {
     if (this.config.close && typeof this.config.close === 'function') {
       this.config.close.call(this, this)
     }
+  }
+  private getRuleConfig(url: string) {
+    const methods = ['expire']
+    const result: NetWork.Config = this.rules.reduce(
+      (config: { [key: string]: any }, rule) => {
+        if (rule.test(url)) {
+          methods.forEach((key: string) => {
+            if (rule.config[key]) {
+              if (!config.$rule) {
+                config.$rule = {}
+              }
+              config.$rule[key] = rule.config[key]
+            }
+          })
+          if (rule.config.http) {
+            config = { ...config, ...rule.config.http }
+          }
+        }
+        return config
+      },
+      {}
+    )
+    return result
   }
   private initRules(rules: ISpider.rule[]) {
     rules.forEach((rule: ISpider.rule) => {

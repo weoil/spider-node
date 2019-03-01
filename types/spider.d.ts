@@ -9,7 +9,7 @@ declare namespace ISpider {
     config: NetWork.Config,
     spider: Spider
   ) => void
-  type DownloadMiddleware = (config: NetWork.Config) => NetWork.Config | false
+  type DownloadMiddleware = (config: NetWork.MiddlewareConfig) => NetWork.MiddlewareConfig | false
   interface rule {
     name?: string
     test: string | RegExp
@@ -19,10 +19,9 @@ declare namespace ISpider {
     error?: IRule.IError
   }
   export interface Config {
-    name: string
-    rules: Array<rule>
+    name?: string
+    rules?: Array<rule>
     http?: Http
-    overList?: Set<string>
     plan?: boolean
     open?: (spider: Spider) => Promise<any>
     close?: (spider: Spider) => Promise<any>
@@ -38,7 +37,7 @@ declare namespace ISpider {
       [key: string]: any
     }
     $system?: {
-      overlist?: Set<string>
+      overlist?: Map<string, any>
       [key: string]: any
     }
   }
@@ -62,6 +61,17 @@ export declare namespace NetWork {
     $system?: {
       [key: string]: any
     }
+    $rule?: {
+      [key: string]: any
+    }
+  }
+  export interface MiddlewareConfig extends Config {
+    $system: {
+      [key: string]: any
+    }
+    $rule: {
+      [key: string]: any
+    }
   }
   export interface Result {
     url: string
@@ -73,6 +83,9 @@ export declare namespace IRule {
   interface IRuleConfig {
     baseUrl?: string
     include?: boolean
+    expire?: number
+    http?: request.CoreOptions
+    [key: string]: any
   }
   type IError = ISpider.ErrorMiddleware
   type IParse = (
