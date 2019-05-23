@@ -1,11 +1,9 @@
-const m = {
-  abc: {
-    a: 1
-  }
-}
-const b = {
-  abc: {
-    b: 2
-  }
-}
-console.log(Object.assign({}, m, b))
+let obj = `{"result":{"status":{"code":0,"msg":"succ"},"timestamp":"Mon Mar 11 14:10:16 +0800 2019","top":[],"pdps":[],"cre":[],"total":155205,"end":1552278984,"start":1552278984,"lid":1686,"rtime":1552284616,"data":[{"icons":"","is_cre_manual":"0","hqChart":"{\"stockCharts\":\"\",\"stockCode\":\"\",\"stockMarket\":\"\",\"mulStockChart\":\"\",\"isStaticStock\":\"\"}","intime":"1552282362","channelid":"31","ctime":"1552278984","mtime":"1552282360","authoruid":"0","level":"2","vid":"0","ipad_vid":"0","video_time_length":"0","categoryid":"1","mediaid":"0","templateid":"0","productid":"0","ext_0":"0","ext_1":"0","ext_2":"0","ext_3":"0","ext_4":"0","docid":"comos:hsxncvh1562003","url":"https:\/\/finance.sina.com.cn\/china\/gncj\/2019-03-11\/doc-ihsxncvh1562003.shtml","urls":"[\"https:\\\/\\\/finance.sina.com.cn\\\/china\\\/gncj\\\/2019-03-11\\\/doc-ihsxncvh1562003.shtml\"]","wapurl":"http:\/\/finance.sina.cn\/china\/gncj\/2019-03-11\/detail-ihsxncvh1562003.d.html","wapurls":"[\"http:\\\/\\\/finance.sina.cn\\\/china\\\/gncj\\\/2019-03-11\\\/detail-ihsxncvh1562003.d.html\"]","wapsummary":"","title":"\u697c\u5e02\u677e\u7ed1\uff1f\u623f\u5c4b\u4ea4\u6613\u51cf\u7a0e \u591a\u5730\u8c03\u63a7\u653e\u677e","stitle":"","summary":"","intro":"\u697c\u5e02\u677e\u7ed1\uff1f\u623f\u5c4b\u4ea4\u6613\u51cf\u7a0e\uff0c\u591a\u5730\u8c03\u63a7\u653e\u677e \u51cf\u534a\u5f81\u6536\u623f\u5c4b\u4ea4\u6613\u589e\u503c\u7a0e\u9644\u52a0\u7b49\uff0c\u9020\u6210\u201c\u5ffd\u5982\u4e00\u591c\u6625\u98ce\u6765\uff0c\u5343\u6811\u4e07\u6811\u68a8\u82b1\u5f00\u201d\u7684\u611f\u5b98\u6548\u679c\uff0c\u4ee4\u5b8f\u89c2\u8c03\u63a7\u677e\u7ed1\u8fdb\u5165\u4e00\u4e2a\u9ad8\u9884\u671f\u72b6\u6001\u3002","author":"","commentid":"cj:comos-hsxncvh1562003:0","video_id":"","keywords":"","media_name":"\u4e2d\u56fd\u4f01\u4e1a\u5bb6","columnid":"1834,1839","subjectid":"","img":{"u":"http:\/\/n.sinaimg.cn\/front\/740\/w1080h460\/20190311\/8Kp2-htzuhtp7712343.jpg","w":1080,"h":460,"t":""},"images":[{"u":"http:\/\/n.sinaimg.cn\/tech\/crawl\/136\/w550h386\/20190311\/NQ74-htzuhtp7702746.jpg","w":550,"h":386,"t":""}],"lids":"295,1058,1686,2509,2516,2519,2544","oid":"202070811","mlids":"","ext":"1","comment_reply":0,"comment_show":0,"comment_total":0}]}}`
+obj = obj
+  .replace(/\\"/g, '"')
+  .replace(/"\{/g, '{')
+  .replace(/\}"/g, '}')
+  .replace(/"\[/g, '[')
+  .replace(/\]"/g, ']')
+// console.log(`"[]"`.replace(`"[`,'[').replace(`]"`,`]`))
+console.log(JSON.parse(obj))

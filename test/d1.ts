@@ -1,39 +1,40 @@
-import { Spider } from '../src/index'
-import { NetWork } from '../types/spider'
-const testConfig = {}
-const M = new Map()
-M.set('https://developer.mozilla.org/zh-CN/docs/Web/HTML/Element/canvas', {})
-const spider = new Spider({
-  name: 'mdn',
-  http: {
-    delay: 500,
-    meta: {
-      a: 1
-    },
-    $system: {
-      overlist: M
+import Spider from '../src/spider';
+type i_search_subjects = {
+  subjects: [
+    {
+      title: string;
+      cover: string;
+      id: string;
+      rate: string;
+      is_new: boolean;
+      playable: boolean;
+      url: string;
     }
-  },
+  ];
+};
+const spider = new Spider({
   rules: [
     {
-      test: /\/zh-CN\/docs\/[^"']*/,
-      parse(url, data, $, c, _) {
-        console.log('23333', url, c)
-        if (c.meta && c.meta.a) {
-          c.meta.a += 1
+      test: /movie\.douban\.com\/j\/search_subjects\?.*/,
+      config: {
+        cacheTime: 0,
+        include: false,
+        http: {
+          encoding: 'utf-8'
         }
       },
-      error(url, error, c, s) {
-        console.log('error', url)
-      },
-      config: {
-        expire: 10000
+      parse(url, data: i_search_subjects, $, config,spider) {
+        console.log(spider)
+        if (data) {
+          data.subjects.forEach(subject => {
+            console.log(subject.title, subject.cover, subject);
+          });
+        }
       }
     }
   ]
-})
-// spider.use((config: NetWork.MiddlewareConfig) => {
-//   console.log('middleware', config)
-//   return config
-// })
-spider.start('https://developer.mozilla.org/zh-CN')
+});
+
+spider.test(
+  'https://movie.douban.com/j/search_subjects?type=movie&tag=%E7%83%AD%E9%97%A8&sort=recommend&page_limit=20&page_start=40'
+);

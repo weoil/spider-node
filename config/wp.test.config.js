@@ -8,5 +8,5 @@ module.exports = merge(base, {
   entry: {
     index: resolve('test/d1.ts')
   },
-  mode: 'development'
+  mode: 'production'
 })

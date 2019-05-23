@@ -1,5 +1,5 @@
-import Spider from '@/spider'
-import { IRule, NetWork } from '@@/types/spider'
+import Spider from './spider'
+import { IRule, NetWork } from '../types/spider'
 import * as Cheerio from 'cheerio'
 import URL from 'url'
 
@@ -60,7 +60,7 @@ class Rule {
   }
   public async call(
     url: string,
-    data: string | object,
+    data: string | any,
     config: NetWork.Config,
     context: Spider
   ): Promise<any> {
