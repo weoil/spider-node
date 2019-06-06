@@ -1,98 +1,71 @@
 import * as request from 'request';
-import Rule from '@/rule';
 import Spider from '../src/spider';
-import CHttp from '../src/http';
-declare namespace ISpider {
-  type ErrorMiddleware = (
-    url: string,
-    Error: Error,
-    config: NetWork.Config,
-    spider: Spider
-  ) => void;
-  type DownloadMiddleware = (
-    config: NetWork.MiddlewareConfig
-  ) => NetWork.MiddlewareConfig | false;
-  interface rule {
-    name?: string;
-    test: string | RegExp;
-    config?: IRule.IRuleConfig;
-    parse?: IRule.IParse;
-    pipeline?: IRule.IPipeline;
-    error?: IRule.IError;
-  }
-  interface PlanConfig {
-    urls: string[] | [];
-    time: number;
-  }
-  export interface Config {
-    name?: string;
-    rules?: Array<rule>;
-    http?: Http;
-    plan?: PlanConfig;
-    open?: (spider: Spider) => Promise<any>;
-    close?: (spider: Spider) => Promise<any>;
-    downloadMiddleware?: [DownloadMiddleware];
-    errorMiddleware?: [ErrorMiddleware];
-    log?: boolean;
-  }
-  export interface Http extends request.CoreOptions {
-    maxConnect?: number;
-    delay?: number;
-    repeat?: boolean;
-    meta?: {
-      [key: string]: any;
-    };
-    $system?: {
-      overlist?: Map<string, any>;
-      [key: string]: any;
-    };
-  }
+import * as IHttp from './http.d';
+import * as IRule from './rule.d'
+import Rule from '../src/rule';
+import Http from '../src/http';
+type ErrorMiddleware = (
+  url: string,
+  Error: Error,
+  config: IHttp.Config,
+  spider: Spider
+) => void;
+export interface rule {
+  name?: string;
+  test: string | RegExp;
+  config?: IRule.Config;
+  parse?: IRule.IParse;
+  pipeline?: IRule.IPipeline;
+  error?: IRule.IError;
 }
-
-export declare namespace NetWork {
-  interface Http {
-    maxConnect: number;
-    connect: number;
-    middlewares: Array<ISpider.DownloadMiddleware>;
-    config: Config;
-    ifInsert(): boolean;
-    run(url: string, config: Config): Promise<NetWork.Result>;
-    callMiddleware(config: Config): NetWork.Config | false;
-  }
-  export interface Config extends request.CoreOptions {
-    url?: string;
-    meta?: {
-      [key: string]: any;
-    };
-    rule?: IRule.IRuleConfig;
-    cacheTime?: number;
-    overlist?: Set<string>;
-    [key: string]: any;
-  }
-  export interface MiddlewareConfig extends Config {
-    url: string;
-    rootConfig: Config;
-  }
-  export interface Result {
-    url: string;
-    data: any;
-    config: Config;
-  }
+interface PlanConfig {
+  urls: string[] | [];
+  time: number;
 }
-export declare namespace IRule {
-  interface IRuleConfig {
-    baseUrl?: string;
-    include?: boolean;
-    http?: request.CoreOptions;
+export interface HttpConfig extends request.CoreOptions {
+  maxConnect?: number;
+  delay?: number;
+  repeat?: boolean;
+  meta?: {
     [key: string]: any;
-  }
-  type IError = ISpider.ErrorMiddleware;
-  type IParse = (
-    url: string,
-    data: string | any,
-    selector: CheerioSelector | null,
-    config: NetWork.Config,
-    spider: Spider
-  ) => any;
-  type IPipeline = (item?: any, spider?: Spider) => any;
+  };
+  $system?: {
+    overlist?: Map<string, any>;
+    [key: string]: any;
+  };
+}
+export interface Config {
+  name?: string;
+  rules?: Array<rule>;
+  http?: HttpConfig;
+  plan?: PlanConfig;
+  open?: (spider: Spider) => Promise<any>;
+  close?: (spider: Spider) => Promise<any>;
+  downloadMiddleware?: [IHttp.DownloadMiddleware];
+  errorMiddleware?: [ErrorMiddleware];
+  log?: boolean;
+}
+export interface ISpider {
+  config: Config;
+  rules: Rule[];
+  http: HttpConfig;
+  errorMiddlewares: ErrorMiddleware[];
+  init(config: Config): void;
+  start(urls: string[] | string, config?: IHttp.Config): any;
+  rule(
+    name: string,
+    test: string | RegExp,
+    parse: IRule.IParse,
+    ...args: any[]
+  ): Promise<any>;
+  use(...args: IHttp.DownloadMiddleware[]): void;
+  handler(params: {
+    url: string;
+    data: string | object;
+    config: IHttp.Config;
+  }): Promise<any>;
+  error(params: { url: string; error: Error; config: IHttp.Config }): void;
+  onCompleteAll(): void;
+  getRuleConfig(url: string): IRule.Config;
+  initRules(rules: rule[]): void;
 }

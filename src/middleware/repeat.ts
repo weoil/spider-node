@@ -1,10 +1,10 @@
-import { NetWork } from '../../types/spider';
+import * as IHttp from '../../types/http.d';
 interface cacheMapImp {
   date: number;
 }
-export default function noRepeat(
-  config: NetWork.MiddlewareConfig
-): NetWork.MiddlewareConfig | false {
+export default async function noRepeat(
+  config: IHttp.MiddlewareConfig
+): Promise<IHttp.MiddlewareConfig | false> {
   let { url, overlist, cacheMap, rule, rootConfig, cacheTime } = config;
   if (!overlist) {
     rootConfig.overlist = config.overlist = overlist = new Set();

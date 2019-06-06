@@ -1,32 +1,34 @@
-import NoRepeatMid from './middleware/repeat';
-import { ISpider, NetWork } from '../types/spider';
 import { EventEmitter } from 'events';
+import * as IHttp from '../types/http.d';
+import * as ISpider from '../types/spider.d';
+import NoRepeatMid from './middleware/repeat';
+
 import iconv from 'iconv-lite';
 import rp from 'request-promise';
 
 interface IHttpTask {
   url: string;
-  config: NetWork.Config;
+  config: IHttp.Config;
 }
-class Http extends EventEmitter implements NetWork.Http {
+class Http extends EventEmitter implements IHttp.IHttp {
   public static clone(http: Http): Http {
     return new Http(http.config, http.middlewares);
   }
   public delay: number = 0;
   public maxConnect: number = Infinity;
   public connect: number = 0;
-  public middlewares: ISpider.DownloadMiddleware[] = [];
+  public middlewares: IHttp.DownloadMiddleware[] = [];
   public timer: NodeJS.Timeout | null = null;
-  public config: NetWork.Config = {
+  public config: IHttp.Config = {
     overlist: new Set(),
     cacheMap: new Map()
   };
   private queue: IHttpTask[] = [];
   constructor(
-    config: ISpider.Http = {
+    config: ISpider.HttpConfig = {
       repeat: false
     },
-    middlewares?: ISpider.DownloadMiddleware[]
+    middlewares?: IHttp.DownloadMiddleware[]
   ) {
     super();
     const cfg = (this.config = { ...this.config, ...config });
@@ -56,7 +58,7 @@ class Http extends EventEmitter implements NetWork.Http {
   }
   public async push(
     url: string,
-    config: NetWork.Config = {},
+    config: IHttp.Config = {},
     priority: boolean = false
   ): Promise<any> {
     if (this.ifInsert()) {
@@ -76,11 +78,11 @@ class Http extends EventEmitter implements NetWork.Http {
     }
     this.config.overlist.add(url);
   }
-  public async run(url: string, config: NetWork.Config = {}): Promise<any> {
+  public async run(url: string, config: IHttp.Config = {}): Promise<any> {
     this.connect++;
     let jump = false;
     try {
-      let $config: NetWork.Config | false = this.callMiddleware({
+      const $config: IHttp.Config | false = await this.callMiddleware({
         url,
         ...this.config,
         ...config,
@@ -96,7 +98,7 @@ class Http extends EventEmitter implements NetWork.Http {
           result = JSON.parse(result);
         }
       } catch (err) {}
-      const data: NetWork.Result = {
+      const data: IHttp.Result = {
         url,
         config: $config,
         data: result
@@ -107,14 +109,19 @@ class Http extends EventEmitter implements NetWork.Http {
       }
       this.emit('complete', data);
     } catch (error) {
+      if (
+        error.message !== 'middleware return false' &&
+        config.retry &&
+        config.retry > 0
+      ) {
+        this.push(url, { ...config, retry: config.retry - 1 });
+        this.emit('error-retry', { url, config, error });
+        return;
+      }
       this.emit('error', { url, config, error });
     } finally {
       if (this.delay && !jump) {
-        this.timer = setTimeout(() => {
-          if (this.timer) {
-            clearTimeout(this.timer);
-            this.timer = null;
-          }
+        setTimeout(() => {
           this.complete();
         }, this.delay);
       } else {
@@ -123,7 +130,7 @@ class Http extends EventEmitter implements NetWork.Http {
     }
   }
   public appendMiddleware(
-    fn: ISpider.DownloadMiddleware | ISpider.DownloadMiddleware[]
+    fn: IHttp.DownloadMiddleware | IHttp.DownloadMiddleware[]
   ) {
     if (Array.isArray(fn)) {
       this.middlewares = this.middlewares.concat(fn);
@@ -131,19 +138,19 @@ class Http extends EventEmitter implements NetWork.Http {
     }
     this.middlewares.push(fn);
   }
-  public callMiddleware(
-    config: NetWork.MiddlewareConfig
-  ): NetWork.MiddlewareConfig | false {
-    let c: NetWork.MiddlewareConfig | false = { ...config };
+  public async callMiddleware(
+    config: IHttp.MiddlewareConfig
+  ): Promise<IHttp.MiddlewareConfig | false> {
+    let cfg: IHttp.MiddlewareConfig = config;
     for (const fn of this.middlewares) {
-      const rc = fn(c);
+      const rc: IHttp.MiddlewareConfig | false = await fn(cfg);
       if (rc) {
-        c = rc;
+        cfg = rc;
       } else if (rc === false) {
         return false;
       }
     }
-    return c;
+    return cfg;
   }
   public decode(buffer: Buffer, charset?: any) {
     if (charset) {

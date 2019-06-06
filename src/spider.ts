@@ -1,7 +1,10 @@
+import { EventEmitter } from 'events';
+import * as IHttp from '../types/http.d';
+import * as IRule from '../types/rule.d';
+import * as ISpider from '../types/spider.d';
 import Http from './http';
 import Rule from './rule';
-import { IRule, ISpider, NetWork } from '../types/spider';
-import { EventEmitter } from 'events';
+
 enum Mode {
   development,
   production,
@@ -20,17 +23,17 @@ enum Mode {
 //   }
 // }
 
-class Spider extends EventEmitter {
+class Spider extends EventEmitter implements ISpider.ISpider {
   public static new(config: ISpider.Config) {
     return new Spider(config);
   }
-  private config: ISpider.Config = {
+  public config: ISpider.Config = {
     name: 'spider'
   };
-  private rules: Rule[] = [];
-  private http: Http;
-  private mode: Mode = Mode.production;
-  private errorMiddlewares: ISpider.ErrorMiddleware[] = [];
+  public rules: Rule[] = [];
+  public http: Http;
+  public mode: Mode = Mode.production;
+  public errorMiddlewares: ISpider.ErrorMiddleware[] = [];
   constructor(config: ISpider.Config, http?: Http) {
     super();
     this.config = { ...this.config, ...config };
@@ -54,19 +57,19 @@ class Spider extends EventEmitter {
     this.http.on('error', this.error.bind(this));
     this.http.on('completeAll', this.onCompleteAll.bind(this));
   }
-  public async start(urls: string[] | string, config?: NetWork.Config) {
+  public async start(urls: string[] | string, config?: IHttp.Config) {
     if (this.config.open && typeof this.config.open === 'function') {
       await this.config.open.call(this, this);
     }
     this.push(urls, config);
   }
-  public test(urls: string[] | string, config?: NetWork.Config) {
+  public test(urls: string[] | string, config?: IHttp.Config) {
     this.mode = Mode.test;
     this.start(urls, config);
   }
   public push(
     urls: string[] | string,
-    config: NetWork.Config = {},
+    config: IHttp.Config = {},
     priority: boolean = false
   ) {
     let arr: string[] = [];
@@ -91,7 +94,7 @@ class Spider extends EventEmitter {
     parse: IRule.IParse,
     ...args: any[]
   ): Promise<any> {
-    let config: IRule.IRuleConfig = {};
+    let config: IRule.Config = {};
     const c = args[args.length - 1];
     if (typeof c === 'object') {
       config = c;
@@ -107,20 +110,20 @@ class Spider extends EventEmitter {
       config,
       parse,
       args,
-      (url: string, err: Error, cfg: IRule.IRuleConfig) => {
+      (url: string, err: Error, cfg: IRule.Config) => {
         rej(url, err, cfg, this);
       }
     );
     this.rules.push(rule);
     return p;
   }
-  public use(...args: ISpider.DownloadMiddleware[]): void {
+  public use(...args: IHttp.DownloadMiddleware[]): void {
     this.http.appendMiddleware(args);
   }
-  private async handler(params: {
+  public async handler(params: {
     url: string;
     data: string | object;
-    config: NetWork.Config;
+    config: IHttp.Config;
   }): Promise<any> {
     const { url, data, config } = params;
 
@@ -156,13 +159,13 @@ class Spider extends EventEmitter {
       this.push(u);
     });
   }
-  private error(params: { url: string; error: Error; config: NetWork.Config }) {
+  public error(params: { url: string; error: Error; config: IHttp.Config }) {
     const { url, error, config } = params;
     this.errorMiddlewares.forEach((fn: ISpider.ErrorMiddleware) => {
       fn.call(this, url, error, config, this);
     });
   }
-  private onCompleteAll() {
+  public onCompleteAll() {
     if (this.config.plan) {
       const { time, urls } = this.config.plan;
       setTimeout(() => {
@@ -172,9 +175,9 @@ class Spider extends EventEmitter {
       this.config.close.call(this, this);
     }
   }
-  private getRuleConfig(url: string): IRule.IRuleConfig {
-    const result: IRule.IRuleConfig = this.rules.reduce(
-      (config: IRule.IRuleConfig, rule) => {
+  public getRuleConfig(url: string): IRule.Config {
+    const result: IRule.Config = this.rules.reduce(
+      (config: IRule.Config, rule) => {
         if (rule.test(url)) {
           return { ...config, ...rule.config };
         }
@@ -184,7 +187,7 @@ class Spider extends EventEmitter {
     );
     return result;
   }
-  private initRules(rules: ISpider.rule[]) {
+  public initRules(rules: ISpider.rule[]) {
     rules.forEach((rule: ISpider.rule) => {
       const r = new Rule(
         rule.name,

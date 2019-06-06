@@ -1,7 +1,8 @@
-import Spider from './spider'
-import { IRule, NetWork } from '../types/spider'
-import * as Cheerio from 'cheerio'
-import URL from 'url'
+import * as Cheerio from 'cheerio';
+import URL from 'url';
+import * as IHttp from '../types/http.d';
+import * as IRule from '../types/rule.d';
+import Spider from './spider';
 
 // interface IRule {
 //   name: string
@@ -14,61 +15,61 @@ import URL from 'url'
 //   call: (data: string) => any
 // }
 class Rule {
-  public name?: string
-  public rule: RegExp
-  public config: IRule.IRuleConfig
-  public parse?: IRule.IParse
-  public pipelines: IRule.IPipeline[] = []
-  public error?: IRule.IError
+  public name?: string;
+  public rule: RegExp;
+  public config: IRule.Config;
+  public parse?: IRule.IParse;
+  public pipelines: IRule.IPipeline[] = [];
+  public error?: IRule.IError;
   constructor(
     name: string = 'rule',
     rule: string | RegExp,
-    config: IRule.IRuleConfig = {
+    config: IRule.Config = {
       baseUrl: ''
     },
     parse?: IRule.IParse,
     pipeline?: IRule.IPipeline[] | IRule.IPipeline,
     error?: IRule.IError
   ) {
-    this.name = name
-    this.rule = new RegExp(rule)
-    this.config = config
-    this.parse = parse
+    this.name = name;
+    this.rule = new RegExp(rule);
+    this.config = config;
+    this.parse = parse;
     if (pipeline) {
       if (Array.isArray(pipeline)) {
-        this.pipelines = this.pipelines.concat(pipeline)
+        this.pipelines = this.pipelines.concat(pipeline);
       } else {
-        this.pipelines.push(pipeline)
+        this.pipelines.push(pipeline);
       }
     }
-    this.error = error
+    this.error = error;
   }
   public match(url: string, data: string): Set<string> {
-    const result: Set<string> = new Set()
-    const rule = new RegExp(this.rule, 'g')
-    const urls = data.match(rule)
+    const result: Set<string> = new Set();
+    const rule = new RegExp(this.rule, 'g');
+    const urls = data.match(rule);
     if (Array.isArray(urls)) {
       urls.forEach((u: string) => {
-        const p = this.config.baseUrl ? this.config.baseUrl : url
-        result.add(URL.resolve(p, u))
-      })
+        const p = this.config.baseUrl ? this.config.baseUrl : url;
+        result.add(URL.resolve(p, u));
+      });
     }
-    return result
+    return result;
   }
   public test(url: string): boolean {
-    return this.rule.test(url)
+    return this.rule.test(url);
   }
   public async call(
     url: string,
     data: string | any,
-    config: NetWork.Config,
+    config: IHttp.Config,
     context: Spider
   ): Promise<any> {
     if (!this.test(url)) {
-      return
+      return;
     }
     if (!this.parse) {
-      return
+      return;
     }
     try {
       let item = await this.parse.call(
@@ -78,32 +79,32 @@ class Rule {
         typeof data === 'string' ? Cheerio.load(data) : null,
         config,
         context
-      )
+      );
       if (!this.pipelines.length) {
-        return
+        return;
       }
       for (const p of this.pipelines) {
-        item = await p.call(context, item, context)
+        item = await p.call(context, item, context);
         if (item === false) {
-          break
+          break;
         }
       }
     } catch (err) {
-      this.callError(url, err, config, context)
+      this.callError(url, err, config, context);
     }
   }
   public callError(
     url: string,
     error: Error,
-    config: NetWork.Config,
+    config: IHttp.Config,
     context: Spider
   ): void {
     if (this.error) {
-      this.error.call(context, url, error, config, context)
+      this.error.call(context, url, error, config, context);
     }
   }
   public isInclude() {
-    return this.config.include === false ? false : true
+    return this.config.include === false ? false : true;
   }
 }
-export default Rule
+export default Rule;
