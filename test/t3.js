@@ -7,3 +7,6 @@ obj = obj
   .replace(/\]"/g, ']')
 // console.log(`"[]"`.replace(`"[`,'[').replace(`]"`,`]`))
 console.log(JSON.parse(obj))
+
+
+console.log(/\d+/.exec('http://data.eastmoney.com/kcb/detail/123.html'))

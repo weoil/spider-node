@@ -17,14 +17,12 @@ module.exports = merge(
       filename: '[name].js',
       library: 'spider',
       // umdNamedDefine: true,
-      libraryTarget: 'umd'
+      libraryTarget: 'commonjs2'
     },
     module: {
-      unknownContextCritical: false,
       rules: [
         {
-          test: /\.ts$/,
-          exclude: /node_modules/,
+          test: /\.ts?$/,
           use: [
             {
               loader: 'ts-loader'
@@ -40,7 +38,7 @@ module.exports = merge(
       },
       extensions: ['.js', '.ts', '.json']
     },
-    // externals: [nodeExternals()],
+    externals: [nodeExternals()],
     optimization: {
       splitChunks: {
         chunks: 'initial',

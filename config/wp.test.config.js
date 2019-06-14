@@ -6,7 +6,7 @@ function resolve(dir) {
 }
 module.exports = merge(base, {
   entry: {
-    index: resolve('test/d1.ts')
+    index: resolve('test/kechuang.ts')
   },
-  mode: 'production'
+  mode: 'development'
 })

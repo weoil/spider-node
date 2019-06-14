@@ -111,8 +111,7 @@ class Http extends EventEmitter implements IHttp.IHttp {
     } catch (error) {
       if (
         error.message !== 'middleware return false' &&
-        config.retry &&
-        config.retry > 0
+        config.retry
       ) {
         this.push(url, { ...config, retry: config.retry - 1 });
         this.emit('error-retry', { url, config, error });

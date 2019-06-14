@@ -57,22 +57,25 @@ class Spider extends EventEmitter implements ISpider.ISpider {
     this.http.on('error', this.error.bind(this));
     this.http.on('completeAll', this.onCompleteAll.bind(this));
   }
-  public async start(urls: string[] | string, config?: IHttp.Config) {
+  public async start(urls: string[] | string | ISpider.urlsFn , config?: IHttp.Config) {
     if (this.config.open && typeof this.config.open === 'function') {
       await this.config.open.call(this, this);
     }
     this.push(urls, config);
   }
-  public test(urls: string[] | string, config?: IHttp.Config) {
+  public test(urls: string[] | string | ISpider.urlsFn, config?: IHttp.Config) {
     this.mode = Mode.test;
     this.start(urls, config);
   }
   public push(
-    urls: string[] | string,
+    urls: string[] | string | ISpider.urlsFn,
     config: IHttp.Config = {},
     priority: boolean = false
   ) {
     let arr: string[] = [];
+    if(typeof urls === 'function'){
+      urls = urls()
+    }
     if (Array.isArray(urls)) {
       arr = arr.concat(urls);
     } else {
@@ -167,7 +170,10 @@ class Spider extends EventEmitter implements ISpider.ISpider {
   }
   public onCompleteAll() {
     if (this.config.plan) {
-      const { time, urls } = this.config.plan;
+      let { time, urls } = this.config.plan;
+      if (typeof urls === 'function') {
+        urls = urls();
+      }
       setTimeout(() => {
         this.push(urls);
       }, time);

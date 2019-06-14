@@ -1,7 +1,7 @@
 import * as request from 'request';
 import Spider from '../src/spider';
 import * as IHttp from './http.d';
-import * as IRule from './rule.d'
+import * as IRule from './rule.d';
 import Rule from '../src/rule';
 import Http from '../src/http';
 type ErrorMiddleware = (
@@ -18,8 +18,10 @@ export interface rule {
   pipeline?: IRule.IPipeline;
   error?: IRule.IError;
 }
+
+type urlsFn = () => string | string[];
 interface PlanConfig {
-  urls: string[] | [];
+  urls: string[] | [] | urlsFn;
   time: number;
 }
 export interface HttpConfig extends request.CoreOptions {
@@ -51,7 +53,13 @@ export interface ISpider {
   http: HttpConfig;
   errorMiddlewares: ErrorMiddleware[];
   init(config: Config): void;
-  start(urls: string[] | string, config?: IHttp.Config): any;
+  test(urls: string[] | string | urlsFn, config?: IHttp.Config): any;
+  start(urls: string[] | string | urlsFn, config?: IHttp.Config): any;
+  push(
+    urls: string[] | string | urlsFn,
+    config: IHttp.Config,
+    priority: boolean
+  ): any;
   rule(
     name: string,
     test: string | RegExp,

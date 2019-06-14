@@ -9,7 +9,7 @@
       "request": "launch",
       "name": "Launch Program",
       "preLaunchTask": "tsc: build - tsconfig.json",
-      "program": "${workspaceFolder}\\test\\d1.ts",
+      "program": "${workspaceFolder}\\test\\kechuang.ts",
       "outFiles": [
         "${workspaceFolder}/**/*.js"
       ]
@@ -19,7 +19,7 @@
       "type": "node",
       "request": "launch",
       "args": [
-        "${workspaceRoot}/test/d1.ts" // 入口文件
+        "${workspaceRoot}/test/kechuang.ts" // 入口文件
       ],
       "runtimeArgs": [
         "--nolazy",
