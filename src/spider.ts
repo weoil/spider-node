@@ -52,27 +52,36 @@ class Spider extends EventEmitter implements ISpider.ISpider {
     this.http.on("error", this.error.bind(this));
     this.http.on("completeAll", this.onCompleteAll.bind(this));
   }
-  public async start(urls: string[] | string, config?: IHttp.Config) {
+  public async start(
+    urls: string[] | string | ISpider.urlsFn | Set<string>,
+    config?: IHttp.Config
+  ) {
     if (this.config.open && typeof this.config.open === "function") {
       this.logger.info(`执行打开函数`);
       await this.config.open.call(this, this);
     }
     this.push(urls, config);
   }
-  public test(urls: string[] | string, config?: IHttp.Config) {
+  public test(
+    urls: string[] | string | ISpider.urlsFn | Set<string>,
+    config?: IHttp.Config
+  ) {
     this.mode = Mode.test;
     this.start(urls, config);
   }
   public push(
-    urls: string[] | string | Set<string>,
+    urls: string[] | string | Set<string> | ISpider.urlsFn | Set<string>,
     config: IHttp.Config = {},
     priority: boolean = false
   ) {
     let arr: string[] = [];
+    if (typeof urls === "function") {
+      urls = urls();
+    }
     if (Array.isArray(urls)) {
       arr = arr.concat(urls);
     } else if (urls instanceof Set) {
-      arr = arr.concat(...urls.values());
+      arr = arr.concat(Array.from(urls));
     } else {
       arr.push(urls);
     }

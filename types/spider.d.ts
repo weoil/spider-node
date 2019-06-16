@@ -1,9 +1,9 @@
-import * as request from 'request';
-import Spider from '../src/spider';
-import * as IHttp from './http.d';
-import * as IRule from './rule.d';
-import Rule from '../src/rule';
-import Http from '../src/http';
+import * as request from "request";
+import Spider from "../src/spider";
+import * as IHttp from "./http.d";
+import * as IRule from "./rule.d";
+import Rule from "../src/rule";
+import Http from "../src/http";
 type ErrorMiddleware = (
   url: string,
   Error: Error,
@@ -18,8 +18,10 @@ export interface rule {
   pipeline?: IRule.IPipeline;
   error?: IRule.IError;
 }
+
+type urlsFn = () => string | string[] | Set<string>;
 interface PlanConfig {
-  urls: string[] | [];
+  urls: string[] | [] | urlsFn;
   time: number;
 }
 export interface HttpConfig extends IHttp.Config {
@@ -51,7 +53,19 @@ export interface ISpider {
   http: HttpConfig;
   errorMiddlewares: ErrorMiddleware[];
   init(config: Config): void;
-  start(urls: string[] | string, config?: IHttp.Config): any;
+  test(
+    urls: string[] | string | urlsFn | Set<string>,
+    config?: IHttp.Config
+  ): any;
+  start(
+    urls: string[] | string | urlsFn | Set<string>,
+    config?: IHttp.Config
+  ): any;
+  push(
+    urls: string[] | string | urlsFn | Set<string>,
+    config: IHttp.Config,
+    priority: boolean
+  ): any;
   rule(
     name: string,
     test: string | RegExp,
@@ -60,7 +74,7 @@ export interface ISpider {
   ): Promise<any>;
   use(...args: IHttp.DownloadMiddleware[]): void;
   push(
-    urls: string[] | string | Set<string>,
+    urls: string[] | string | Set<string> | urlsFn,
     config: IHttp.Config,
     priority: boolean
   ): void;
