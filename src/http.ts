@@ -1,19 +1,21 @@
 import { EventEmitter } from 'events';
+import iconv from 'iconv-lite';
+import { Logger } from 'log4js';
+import rp from 'request-promise';
 import * as IHttp from '../types/http.d';
 import * as ISpider from '../types/spider.d';
 import NoRepeatMid from './middleware/repeat';
-
-import iconv from 'iconv-lite';
-import rp from 'request-promise';
-
+import { createLogger } from './utils/logger';
 interface IHttpTask {
   url: string;
   config: IHttp.Config;
 }
-class Http extends EventEmitter implements IHttp.IHttp {
+
+export class Http extends EventEmitter implements IHttp.IHttp, IHttp.IFetch {
   public static clone(http: Http): Http {
     return new Http(http.config, http.middlewares);
   }
+  public logger: Logger;
   public delay: number = 0;
   public maxConnect: number = Infinity;
   public connect: number = 0;
@@ -31,6 +33,7 @@ class Http extends EventEmitter implements IHttp.IHttp {
     middlewares?: IHttp.DownloadMiddleware[]
   ) {
     super();
+    this.logger = createLogger(config.name || 'spider');
     const cfg = (this.config = { ...this.config, ...config });
     if (cfg.maxConnect) {
       this.maxConnect = cfg.maxConnect;
@@ -49,7 +52,11 @@ class Http extends EventEmitter implements IHttp.IHttp {
       this.middlewares = [...this.middlewares, ...middlewares];
     }
   }
-  public ifInsert(): boolean {
+  public async request(url: string, config: IHttp.Config) {
+    const result = await rp(url, config);
+    return result;
+  }
+  public inspect(): boolean {
     // console.log(this.connect, this.maxConnect, this.queue.length)
     if (this.connect < this.maxConnect) {
       return true;
@@ -61,10 +68,11 @@ class Http extends EventEmitter implements IHttp.IHttp {
     config: IHttp.Config = {},
     priority: boolean = false
   ): Promise<any> {
-    if (this.ifInsert()) {
+    if (this.inspect()) {
       this.run(url, config);
       return;
     }
+    this.logger.info(`任务加入队列:${url}`);
     const queue = this.queue;
     if (priority) {
       queue.unshift({ url, config });
@@ -80,6 +88,7 @@ class Http extends EventEmitter implements IHttp.IHttp {
   }
   public async run(url: string, config: IHttp.Config = {}): Promise<any> {
     this.connect++;
+    this.logger.info(`正在进行请求,目前请求数量:${this.connect}:url:${url}`);
     let jump = false;
     try {
       const $config: IHttp.Config | false = await this.callMiddleware({
@@ -89,10 +98,15 @@ class Http extends EventEmitter implements IHttp.IHttp {
         rootConfig: this.config
       });
       if ($config === false) {
+        this.logger.info(`网络处理中间件阻止继续执:${url}`);
         jump = true;
         throw new Error('middleware return false');
       }
-      let result = await rp(url, { jar: false, encoding: null, ...$config });
+      let result = await this.request(url, {
+        jar: false,
+        encoding: null,
+        ...$config
+      });
       try {
         if (typeof result === 'string') {
           result = JSON.parse(result);
@@ -107,6 +121,7 @@ class Http extends EventEmitter implements IHttp.IHttp {
         const charset = $config.meta && $config.meta.charset;
         data.data = this.decode(result, charset);
       }
+      this.logger.info(`网络请求完成:${url}`);
       this.emit('complete', data);
     } catch (error) {
       if (
@@ -122,6 +137,7 @@ class Http extends EventEmitter implements IHttp.IHttp {
     } finally {
       if (this.delay && !jump) {
         setTimeout(() => {
+          this.logger.info(`网络请求等待延迟:${url},${this.delay}`);
           this.complete();
         }, this.delay);
       } else {
@@ -174,7 +190,7 @@ class Http extends EventEmitter implements IHttp.IHttp {
   }
   private complete(): void {
     this.connect--;
-    while (this.ifInsert()) {
+    while (this.inspect()) {
       const task = this.queue.shift();
       if (task) {
         this.push(task.url, task.config);

@@ -1,4 +1,5 @@
-import Spider from '../src/spider';
+import Spider, { createLogger } from '../src';
+const logger = createLogger('douban');
 type i_search_subjects = {
   subjects: [
     {
@@ -13,6 +14,7 @@ type i_search_subjects = {
   ];
 };
 const spider = new Spider({
+  name: 'douban',
   rules: [
     {
       test: /movie\.douban\.com\/j\/search_subjects\?.*/,
@@ -23,11 +25,12 @@ const spider = new Spider({
           encoding: 'utf-8'
         }
       },
-      parse(url, data: i_search_subjects, $, config,spider) {
-        console.log(spider)
+      parse(url, data: i_search_subjects, $, config, spider) {
+        // console.log(spider);
         if (data) {
           data.subjects.forEach(subject => {
-            console.log(subject.title, subject.cover, subject);
+            logger.info(subject.title, subject);
+            // console.log(subject.title, subject.cover, subject);
           });
         }
       }

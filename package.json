@@ -1,6 +1,6 @@
 {
   "name": "spider-node",
-  "version": "0.3.0021",
+  "version": "1.0.0",
   "description": "",
   "main": "./dist/index.js",
   "scripts": {
@@ -32,10 +32,12 @@
   "dependencies": {
     "cheerio": "^1.0.0-rc.2",
     "iconv-lite": "^0.4.24",
-    "mysql": "^2.16.0",
+    "log4js": "^4.3.1",
     "request": "^2.88.0",
-    "request-promise": "^4.2.4",
-    "ts-node": "^8.1.0"
+    "request-promise": "^4.2.4"
   },
-  "types": "./types/index.d.ts"
+  "types": "src/index.ts",
+  "prettier": {
+    "arrowParens": "always"
+  }
 }

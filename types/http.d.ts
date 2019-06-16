@@ -1,8 +1,9 @@
-import * as IRule from './rule'
+import * as IRule from './rule';
 import * as request from 'request';
 export interface Config extends request.CoreOptions {
+  name?: string;
   url?: string;
-  retry?:number;
+  retry?: number;
   meta?: {
     [key: string]: any;
   };
@@ -22,13 +23,17 @@ export interface Result {
 }
 type DownloadMiddleware = (
   config: MiddlewareConfig
-) => Promise<MiddlewareConfig| false>;
+) => Promise<MiddlewareConfig | false>;
 export interface IHttp {
   maxConnect: number;
   connect: number;
   middlewares: Array<DownloadMiddleware>;
   config: Config;
-  ifInsert(): boolean;
+  inspect(): boolean;
   run(url: string, config: Config): Promise<Result>;
   callMiddleware(config: Config): Config | false;
+}
+
+export interface IFetch {
+  request(url: string, config: request.CoreOptions): Promise<any>;
 }

@@ -14,7 +14,7 @@ import Spider from './spider';
 //   test: (data: string) => boolean
 //   call: (data: string) => any
 // }
-class Rule {
+export class Rule {
   public name?: string;
   public rule: RegExp;
   public config: IRule.Config;

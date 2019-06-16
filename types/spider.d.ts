@@ -1,7 +1,7 @@
 import * as request from 'request';
 import Spider from '../src/spider';
 import * as IHttp from './http.d';
-import * as IRule from './rule.d'
+import * as IRule from './rule.d';
 import Rule from '../src/rule';
 import Http from '../src/http';
 type ErrorMiddleware = (
@@ -22,7 +22,7 @@ interface PlanConfig {
   urls: string[] | [];
   time: number;
 }
-export interface HttpConfig extends request.CoreOptions {
+export interface HttpConfig extends IHttp.Config {
   maxConnect?: number;
   delay?: number;
   repeat?: boolean;
@@ -59,6 +59,11 @@ export interface ISpider {
     ...args: any[]
   ): Promise<any>;
   use(...args: IHttp.DownloadMiddleware[]): void;
+  push(
+    urls: string[] | string | Set<string>,
+    config: IHttp.Config,
+    priority: boolean
+  ): void;
   handler(params: {
     url: string;
     data: string | object;

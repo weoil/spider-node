@@ -40,7 +40,7 @@ module.exports = merge(
       },
       extensions: ['.js', '.ts', '.json']
     },
-    // externals: [nodeExternals()],
+    externals: [nodeExternals()],
     optimization: {
       splitChunks: {
         chunks: 'initial',
