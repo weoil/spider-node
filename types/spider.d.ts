@@ -31,10 +31,6 @@ export interface HttpConfig extends IHttp.Config {
   meta?: {
     [key: string]: any;
   };
-  $system?: {
-    overlist?: Map<string, any>;
-    [key: string]: any;
-  };
 }
 export interface Config {
   name?: string;

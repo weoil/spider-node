@@ -1,26 +1,16 @@
-### 使用方式
-
-```js
-import { Spider } from 'spider-node'
-const spider = new Spider(config)
-spider.start(urls)
-```
-
 #### config
 
 ```js
 {
-  name:'', // 名称
+  name:'spider', // 名称
   http:{
     maxConnect?: number // 最大连接 如果为1 则会等待上一个任务结束后再次发送任务
     delay?: number // 每次请求后的等待时间
     repeat?: boolean // 是否开启去重
     meta?: { // 可携带自定义信息
       [key: string]: any
-    }
-    $system?: {
-      overlist?: string[] | Map<string, any> // 已完成列表
     },
+    overlist:Set<string>, // 已完成列表
     ...requestConfig // requets配置
   },
   rules:[
@@ -34,14 +24,14 @@ spider.start(urls)
         meta:{ // 可携带自定义信息
         }
       },
-      parse(url,data,selector,config,spider){
+      async parse(url,data,selector,config,spider){
         url // url
         data // 数据
         selector // cheerio选择器
         config // 该url的配置,可以取出meta
         spider // 爬虫实例,可以调用push进行添加请求
       },
-      pipeline(item){
+      async pipeline(item){
         // parse的返回值将进入
       },
       error(url,error,config,spider){
