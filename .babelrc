@@ -1,26 +1,7 @@
 {
   "presets": [
-    [
-      "@babel/preset-env",
-      {
-        "useBuiltIns": "usage",
-        "modules": false
-      }
-    ]
+    "@babel/preset-typescript",
+    ["@babel/env", { "modules": "umd" }]
   ],
-  "plugins": [
-    [
-      "@babel/plugin-transform-runtime",
-      {
-        "corejs": false,
-
-        "helpers": false,
-
-        "regenerator": false,
-
-        "useESModules": false
-      }
-    ]
-  ],
-  "comments": false
+  "plugins": ["add-module-exports"]
 }

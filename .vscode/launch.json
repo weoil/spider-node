@@ -18,11 +18,9 @@
       "name": "Current TS File",
       "type": "node",
       "request": "launch",
-      "args": [
-        "${workspaceRoot}/test/kechuang.ts" // 入口文件
-      ],
+      "args": ["${workspaceFolder}/test/d1.ts"],
       "runtimeArgs": [
-        "--nolazy",
+        "--lazy",
         "-r",
         "ts-node/register"
       ],

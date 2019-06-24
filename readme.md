@@ -29,7 +29,7 @@
         data // 数据
         selector // cheerio选择器
         config // 该url的配置,可以取出meta
-        spider // 爬虫实例,可以调用push进行添加请求
+        spider // 爬虫实例,可以调用push进行添加请求(可通过 spider.push(url,{meta:{}}))的方式传递信息
       },
       async pipeline(item){
         // parse的返回值将进入
@@ -50,7 +50,7 @@
     // 结束时调用
   },
   downloadMiddleware:[
-    (config:{
+    async (config:{
       url,...config,
       $sysytem:{overlist},
       $rule:{ruleConfig}

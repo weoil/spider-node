@@ -76,7 +76,7 @@ export class Rule {
         context,
         url,
         data,
-        typeof data === 'string' ? Cheerio.load(data) : null,
+        Cheerio.load(data),
         config,
         context
       );

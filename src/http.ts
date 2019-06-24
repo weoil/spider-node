@@ -1,11 +1,11 @@
-import { EventEmitter } from 'events';
-import iconv from 'iconv-lite';
-import { Logger } from 'log4js';
-import rp from 'request-promise';
-import * as IHttp from '../types/http.d';
-import * as ISpider from '../types/spider.d';
-import NoRepeatMid from './middleware/repeat';
-import { createLogger } from './utils/logger';
+import { EventEmitter } from "events";
+import iconv from "iconv-lite";
+import { Logger } from "log4js";
+import rp from "request-promise";
+import * as IHttp from "../types/http.d";
+import * as ISpider from "../types/spider.d";
+import NoRepeatMid from "./middleware/repeat";
+import { createLogger } from "./utils/logger";
 interface IHttpTask {
   url: string;
   config: IHttp.Config;
@@ -33,7 +33,7 @@ export class Http extends EventEmitter implements IHttp.IHttp, IHttp.IFetch {
     middlewares?: IHttp.DownloadMiddleware[]
   ) {
     super();
-    this.logger = createLogger(config.name || 'spider');
+    this.logger = createLogger(config.name || "spider", config.log);
     const cfg = (this.config = { ...this.config, ...config });
     if (cfg.maxConnect) {
       this.maxConnect = cfg.maxConnect;
@@ -100,7 +100,7 @@ export class Http extends EventEmitter implements IHttp.IHttp, IHttp.IFetch {
       if ($config === false) {
         this.logger.info(`网络处理中间件阻止继续执:${url}`);
         jump = true;
-        throw new Error('middleware return false');
+        throw new Error("middleware return false");
       }
       let result = await this.request(url, {
         jar: false,
@@ -108,7 +108,7 @@ export class Http extends EventEmitter implements IHttp.IHttp, IHttp.IFetch {
         ...$config
       });
       try {
-        if (typeof result === 'string') {
+        if (typeof result === "string") {
           result = JSON.parse(result);
         }
       } catch (err) {}
@@ -122,17 +122,14 @@ export class Http extends EventEmitter implements IHttp.IHttp, IHttp.IFetch {
         data.data = this.decode(result, charset);
       }
       this.logger.info(`网络请求完成:${url}`);
-      this.emit('complete', data);
+      this.emit("complete", data);
     } catch (error) {
-      if (
-        error.message !== 'middleware return false' &&
-        config.retry
-      ) {
+      if (error.message !== "middleware return false" && config.retry) {
         this.push(url, { ...config, retry: config.retry - 1 });
-        this.emit('error-retry', { url, config, error });
+        this.emit("error-retry", { url, config, error });
         return;
       }
-      this.emit('error', { url, config, error });
+      this.emit("error", { url, config, error });
     } finally {
       if (this.delay && !jump) {
         setTimeout(() => {
@@ -171,18 +168,18 @@ export class Http extends EventEmitter implements IHttp.IHttp, IHttp.IFetch {
     if (charset) {
       return iconv.decode(buffer, charset);
     }
-    const tmp = iconv.decode(buffer, 'utf8');
+    const tmp = iconv.decode(buffer, "utf8");
     try {
       charset = /charset\=[^"].*"|charset\="[^"].*"/.exec(tmp);
       charset = charset
-        .replace('charset=', '')
-        .replace(/"/g, '')
-        .replace('-', '')
+        .replace("charset=", "")
+        .replace(/"/g, "")
+        .replace("-", "")
         .trim();
     } catch (e) {
-      charset = 'utf8';
+      charset = "utf8";
     }
-    if (charset.toLowerCase() === 'utf8') {
+    if (charset.toLowerCase() === "utf8") {
       return tmp;
     }
     return iconv.decode(buffer, charset);
@@ -198,7 +195,7 @@ export class Http extends EventEmitter implements IHttp.IHttp, IHttp.IFetch {
       }
     }
     if (this.connect === 0 && this.queue.length === 0) {
-      this.emit('completeAll');
+      this.emit("completeAll");
     }
   }
 }

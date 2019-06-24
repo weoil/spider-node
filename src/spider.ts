@@ -1,5 +1,6 @@
 import { EventEmitter } from "events";
 import { Logger } from "log4js";
+import Schedule from "node-schedule";
 import * as IHttp from "../types/http.d";
 import * as IRule from "../types/rule.d";
 import * as ISpider from "../types/spider.d";
@@ -12,17 +13,21 @@ enum Mode {
   production,
   test
 }
-
+enum Status {
+  Running,
+  Complete,
+  Waiting
+}
+type startUrl = string | string[] | ISpider.urlsFn | Set<string>;
 class Spider extends EventEmitter implements ISpider.ISpider {
   public static new(config: ISpider.Config) {
     return new Spider(config);
   }
-  public config: ISpider.Config = {
-    name: "spider"
-  };
+  public config: ISpider.Config = {};
   public logger: Logger;
   public rules: Rule[] = [];
   public http: Http;
+  public status: Status = Status.Waiting;
   public mode: Mode = Mode.production;
   public errorMiddlewares: ISpider.ErrorMiddleware[] = [];
   constructor(config: ISpider.Config, http?: Http) {
@@ -32,11 +37,11 @@ class Spider extends EventEmitter implements ISpider.ISpider {
       this.http = Http.clone(http);
     } else {
       this.http = new Http(
-        { ...config.http, name: config.name },
+        { ...config.http, name: config.name, log: config.log },
         config.downloadMiddleware
       );
     }
-    this.logger = createLogger(config.name || "spider");
+    this.logger = createLogger(config.name || "spider", config.log);
     this.init(this.config);
   }
   public init(config: ISpider.Config) {
@@ -52,25 +57,20 @@ class Spider extends EventEmitter implements ISpider.ISpider {
     this.http.on("error", this.error.bind(this));
     this.http.on("completeAll", this.onCompleteAll.bind(this));
   }
-  public async start(
-    urls: string[] | string | ISpider.urlsFn | Set<string>,
-    config?: IHttp.Config
-  ) {
+  public async start(urls: startUrl, config?: IHttp.Config) {
+    this.status = Status.Running;
     if (this.config.open && typeof this.config.open === "function") {
       this.logger.info(`执行打开函数`);
       await this.config.open.call(this, this);
     }
     this.push(urls, config);
   }
-  public test(
-    urls: string[] | string | ISpider.urlsFn | Set<string>,
-    config?: IHttp.Config
-  ) {
+  public test(urls: startUrl, config?: IHttp.Config) {
     this.mode = Mode.test;
     this.start(urls, config);
   }
   public push(
-    urls: string[] | string | Set<string> | ISpider.urlsFn | Set<string>,
+    urls: startUrl,
     config: IHttp.Config = {},
     priority: boolean = false
   ) {
@@ -171,7 +171,20 @@ class Spider extends EventEmitter implements ISpider.ISpider {
       fn.call(this, url, error, config, this);
     });
   }
+  // corntab 语法定时任务 -> 秒 分 时 日 月 周几
+  public plan(cron: string, urls: startUrl, immediate: boolean = true): void {
+    if (immediate) {
+      this.start(urls);
+    }
+    Schedule.scheduleJob(cron, () => {
+      if (this.status === Status.Running) {
+        return;
+      }
+      this.start(urls);
+    });
+  }
   public onCompleteAll() {
+    this.status = Status.Complete;
     this.logger.info(`任务全部完成`);
     if (this.config.plan) {
       const { time, urls } = this.config.plan;

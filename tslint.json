@@ -7,6 +7,7 @@
     "semicolon": false,
     "no-console":false,
     "trailing-comma":false,
+    "prefer-const":false,
     "object-literal-sort-keys":false
   },
   "rulesDirectory": []

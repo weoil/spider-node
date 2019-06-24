@@ -26,6 +26,7 @@ interface PlanConfig {
 }
 export interface HttpConfig extends IHttp.Config {
   maxConnect?: number;
+  log?: boolean;
   delay?: number;
   repeat?: boolean;
   meta?: {

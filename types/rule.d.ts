@@ -15,7 +15,7 @@ type IError = ErrorMiddleware;
 type IParse = (
   url: string,
   data: string | any,
-  selector: CheerioSelector | null,
+  selector: CheerioSelector,
   config: IHttp.Config,
   spider: Spider
 ) => any;
