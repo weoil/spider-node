@@ -8,6 +8,7 @@ or es6
 -- import spiderNode from 'spider-node'
 
 const spider = new spiderNode(config) // config请参照下方
+spider.start('https://www.baidu.com')
 ```
 #### config
 
