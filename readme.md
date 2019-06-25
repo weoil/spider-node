@@ -46,10 +46,6 @@ or es6
       }
     }
   ],
-  plan:{ // 定时任务
-    time:180000, // 与上次间隔X秒
-    urls:[]  // 定时任务启动时的urls
-  },
   async open(){
     // 启动时调用
   },
@@ -76,10 +72,15 @@ or es6
   ]
 }
 ```
-
+#### 定时任务 遵循 corntab 语法
+```
+spider.plan("秒 分 时 日 月 周几",()=>{
+  return ['https://www.baidu.com']
+})
+```
 ### API
 
-#### Spider
+urls = string || string[] || Set<string> || (function():string||string[]|| Set<string>)
 
 | method |                      args                       | info                                                                                                                                                             |
 | ------ | :---------------------------------------------: | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -88,6 +89,7 @@ or es6
 | use    |                    function                     | 注册下载中间件                                                                                                                                                   |
 | rule   | (name,regexp,parse,...pipeline,config)=>Promise | 注册规则,如果最后一个 pipeline 不是 function 而是 object 时,将使用该值为配置进行注册,返回一个 Promise,当 rule 报错时可用.catch 捕获 (与 config 中定义 rule 一致) |
 | push   |                   url,config                    | 新增请求,config 为 HttpConfig 并且拥有 meta,meta 值可以在 parse 中获取到                                                                                         |
+| plan   |                 corntabStr,urls                 | 定时任务请求,接收corntab语法的规则,将在特定时间执行检测,如果处于休眠状态,将再次读取urls启动                                                                      |
 
 
 中间件应该具备的能力:
