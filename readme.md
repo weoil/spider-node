@@ -1,3 +1,6 @@
+node爬虫工具,根据配置进行网络请求,通过正则匹配对应各个规则的解析函数,自动推导网站编码,post请求,自动去重(可规定有限期),定时任务,日志,可以通过自定义中间件的形式添加代理,默认不携带cookie,如果需要在config中写入(或者在中间件中动态添加),通过maxConnect和delay来限制同时访问次数,网络请求使用了[request](https://github.com/request/request),参照它来进行相应的配置.
+ 
+ 
 ```
 npm i spider-node
 -- const spider = require('spider-node').default
