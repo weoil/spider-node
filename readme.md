@@ -3,9 +3,11 @@ node爬虫工具,根据配置进行网络请求,通过正则匹配对应各个�
  
 ```
 npm i spider-node
--- const spider = require('spider-node').default
+-- const spiderNode = require('spider-node').default
 or es6
--- import spider from 'spider-node'
+-- import spiderNode from 'spider-node'
+
+const spider = new spiderNode(config) // config请参照下方
 ```
 #### config
 
