@@ -1,12 +1,19 @@
+```
+npm i spider-node
+-- const spider = require('spider-node').default
+or es6
+-- import spider from 'spider-node'
+```
 #### config
 
 ```js
 {
   name:'spider', // 名称
+  log:true,// 是否打印日志
   http:{
     maxConnect?: number // 最大连接 如果为1 则会等待上一个任务结束后再次发送任务
     delay?: number // 每次请求后的等待时间
-    repeat?: boolean // 是否开启去重
+    repeat?: boolean // 是否允许重复
     meta?: { // 可携带自定义信息
       [key: string]: any
     },
