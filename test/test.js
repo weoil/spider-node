@@ -1,5 +1,4 @@
-import spider from "../dist/index.js"
-console.log(spider);
+const spider = require('spider-node').default
 const s = new spider({
   name: "test",
   rules: [
