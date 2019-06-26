@@ -107,11 +107,7 @@ export class Http extends EventEmitter implements IHttp.IHttp, IHttp.IFetch {
         encoding: null,
         ...$config
       });
-      try {
-        if (typeof result === "string") {
-          result = JSON.parse(result);
-        }
-      } catch (err) {}
+
       const data: IHttp.Result = {
         url,
         config: $config,
@@ -120,6 +116,13 @@ export class Http extends EventEmitter implements IHttp.IHttp, IHttp.IFetch {
       if (!$config.encoding) {
         const charset = $config.meta && $config.meta.charset;
         data.data = this.decode(result, charset);
+      }
+      try {
+        if (typeof data.data === "string" && /^(\{|\[)/.test(data.data)) {
+          data.data = JSON.parse(data.data);
+        }
+      } catch (_) {
+        // try
       }
       this.logger.info(`网络请求完成:${url}`);
       this.emit("complete", data);

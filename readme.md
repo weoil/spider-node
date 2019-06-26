@@ -7,7 +7,7 @@ npm i spider-node
 or es6
 -- import spiderNode from 'spider-node'
 
-const spider = new spiderNode(config) // config请参照下方
+const spider = new spiderNode(config) // config请参照下方,具体使用方式可以参照test中的测试用例
 spider.start('https://www.baidu.com')
 ```
 #### config
