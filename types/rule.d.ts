@@ -2,9 +2,7 @@ import * as request from "request";
 import Spider from "../src/spider";
 import { ErrorMiddleware } from "./spider";
 import * as IHttp from "./http";
-interface RuleHttpConfig extends request.CoreOptions {
-  retry?: number;
-}
+interface RuleHttpConfig extends IHttp.Config {}
 export interface Config {
   baseUrl?: string;
   include?: boolean;
