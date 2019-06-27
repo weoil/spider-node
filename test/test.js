@@ -38,8 +38,8 @@ describe("spider", function() {
             const a2Text = $("a:nth-child(2)").text();
             return a2Text;
           },
-          async parse(item) {
-            assert(item, "b");
+          async pipeline(item) {
+            assert.equal(item, "b");
             done();
           },
           error(url, error) {
@@ -118,7 +118,7 @@ describe("spider", function() {
                 .trim(),
               "b"
             );
-            assert(config.meta.str, "hello-b");
+            assert.equal(config.meta.str, "hello-b");
             done();
           },
           error(url, error) {
@@ -149,7 +149,7 @@ describe("spider", function() {
           test: /\/post/,
           async parse(url, data, $, config, spider) {
             const obj = data;
-            assert(obj.str, "hello-post");
+            assert.equal(obj.str, "hello-post");
             done();
           },
           error(url, error) {
@@ -164,5 +164,38 @@ describe("spider", function() {
       ]
     });
     s.start();
+  });
+  it("中文编码解析", function(done) {
+    this.timeout(1000);
+    const s = new spider({
+      name: "name",
+      log: false,
+      rules: [
+        {
+          test: /\/cn.html/,
+          config: {
+            http: {
+              charset: "gbk"
+            }
+          },
+          async parse(url, data, $, config, spider) {
+            const obj = $(".text")
+              .text()
+              .trim();
+            assert.equal(obj, "你好,世界");
+            done();
+          },
+          error(url, error) {
+            done(error);
+          }
+        }
+      ],
+      errorMiddleware: [
+        async (url, error) => {
+          done(error);
+        }
+      ]
+    });
+    s.start("http://127.0.0.1:8881/cn.html");
   });
 });

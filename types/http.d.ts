@@ -1,5 +1,5 @@
-import * as IRule from './rule';
-import * as request from 'request';
+import * as IRule from "./rule";
+import * as request from "request";
 export interface Config extends request.CoreOptions {
   name?: string;
   url?: string;
@@ -7,6 +7,7 @@ export interface Config extends request.CoreOptions {
   meta?: {
     [key: string]: any;
   };
+  charset?: string;
   rule?: IRule.Config;
   cacheTime?: number;
   overlist?: Set<string>;
