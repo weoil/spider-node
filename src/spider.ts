@@ -85,6 +85,10 @@ class Spider extends EventEmitter implements ISpider.ISpider {
     } else {
       arr.push(urls);
     }
+    if (this.http.connect === 0 && arr.length === 0) {
+      this.status = Status.Complete;
+      return
+    }
     arr.forEach((url: string) => {
       this.logger.info(`任务推送:${url}`);
       const ruleConfig = this.getRuleConfig(url);
