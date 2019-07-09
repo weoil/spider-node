@@ -1,7 +1,7 @@
 import * as Cheerio from 'cheerio';
 import URL from 'url';
-import * as IHttp from '../types/http.d';
-import * as IRule from '../types/rule.d';
+import { Http as NHttp } from "../types/http.d";
+import { Rule as NRule } from "../types/rule.d";
 import Spider from './spider';
 
 // interface IRule {
@@ -17,19 +17,19 @@ import Spider from './spider';
 export class Rule {
   public name?: string;
   public rule: RegExp;
-  public config: IRule.Config;
-  public parse?: IRule.IParse;
-  public pipelines: IRule.IPipeline[] = [];
-  public error?: IRule.IError;
+  public config: NRule.Config;
+  public parse?: NRule.IParse;
+  public pipelines: NRule.IPipeline[] = [];
+  public error?: NRule.IError;
   constructor(
     name: string = 'rule',
     rule: string | RegExp,
-    config: IRule.Config = {
+    config: NRule.Config = {
       baseUrl: ''
     },
-    parse?: IRule.IParse,
-    pipeline?: IRule.IPipeline[] | IRule.IPipeline,
-    error?: IRule.IError
+    parse?: NRule.IParse,
+    pipeline?: NRule.IPipeline[] | NRule.IPipeline,
+    error?: NRule.IError
   ) {
     this.name = name;
     this.rule = new RegExp(rule);
@@ -62,7 +62,7 @@ export class Rule {
   public async call(
     url: string,
     data: string | any,
-    config: IHttp.Config,
+    config: NHttp.Config,
     context: Spider
   ): Promise<any> {
     if (!this.test(url)) {
@@ -96,7 +96,7 @@ export class Rule {
   public callError(
     url: string,
     error: Error,
-    config: IHttp.Config,
+    config: NHttp.Config,
     context: Spider
   ): void {
     if (this.error) {

@@ -2,16 +2,17 @@ import { EventEmitter } from "events";
 import iconv from "iconv-lite";
 import { Logger } from "log4js";
 import rp from "request-promise";
-import * as IHttp from "../types/http.d";
-import * as ISpider from "../types/spider.d";
+import { Http as NHttp } from "../types/http.d";
+import { Rule as NRule } from "../types/rule.d";
+import { Spider as NSpider } from "../types/spider.d";
 import NoRepeatMid from "./middleware/repeat";
 import { createLogger } from "./utils/logger";
 interface IHttpTask {
   url: string;
-  config: IHttp.Config;
+  config: NHttp.Config;
 }
 
-export class Http extends EventEmitter implements IHttp.IHttp, IHttp.IFetch {
+export class Http extends EventEmitter implements NHttp.IHttp, NHttp.IFetch {
   public static clone(http: Http): Http {
     return new Http(http.config, http.middlewares);
   }
@@ -19,18 +20,18 @@ export class Http extends EventEmitter implements IHttp.IHttp, IHttp.IFetch {
   public delay: number = 0;
   public maxConnect: number = Infinity;
   public connect: number = 0;
-  public middlewares: IHttp.DownloadMiddleware[] = [];
+  public middlewares: NHttp.DownloadMiddleware[] = [];
   public timer: NodeJS.Timeout | null = null;
-  public config: IHttp.Config = {
+  public config: NHttp.Config = {
     overlist: new Set(),
     cacheMap: new Map()
   };
   private queue: IHttpTask[] = [];
   constructor(
-    config: ISpider.HttpConfig = {
+    config: NSpider.HttpConfig = {
       repeat: false
     },
-    middlewares?: IHttp.DownloadMiddleware[]
+    middlewares?: NHttp.DownloadMiddleware[]
   ) {
     super();
     this.logger = createLogger(config.name || "spider", config.log);
@@ -52,7 +53,7 @@ export class Http extends EventEmitter implements IHttp.IHttp, IHttp.IFetch {
       this.middlewares = [...this.middlewares, ...middlewares];
     }
   }
-  public async request(url: string, config: IHttp.Config) {
+  public async request(url: string, config: NHttp.Config) {
     const result = await rp(url, config);
     return result;
   }
@@ -65,7 +66,7 @@ export class Http extends EventEmitter implements IHttp.IHttp, IHttp.IFetch {
   }
   public async push(
     url: string,
-    config: IHttp.Config = {},
+    config: NHttp.Config = {},
     priority: boolean = false
   ): Promise<any> {
     if (this.inspect()) {
@@ -86,12 +87,12 @@ export class Http extends EventEmitter implements IHttp.IHttp, IHttp.IFetch {
     }
     this.config.overlist.add(url);
   }
-  public async run(url: string, config: IHttp.Config = {}): Promise<any> {
+  public async run(url: string, config: NHttp.Config = {}): Promise<any> {
     this.connect++;
     this.logger.info(`正在进行请求,目前请求数量:${this.connect}:url:${url}`);
     let jump = false;
     try {
-      const $config: IHttp.Config | false = await this.callMiddleware({
+      const $config: NHttp.Config | false = await this.callMiddleware({
         url,
         ...this.config,
         ...config,
@@ -108,7 +109,7 @@ export class Http extends EventEmitter implements IHttp.IHttp, IHttp.IFetch {
         ...$config
       });
 
-      const data: IHttp.Result = {
+      const data: NHttp.Result = {
         url,
         config: $config,
         data: result
@@ -145,7 +146,7 @@ export class Http extends EventEmitter implements IHttp.IHttp, IHttp.IFetch {
     }
   }
   public appendMiddleware(
-    fn: IHttp.DownloadMiddleware | IHttp.DownloadMiddleware[]
+    fn: NHttp.DownloadMiddleware | NHttp.DownloadMiddleware[]
   ) {
     if (Array.isArray(fn)) {
       this.middlewares = this.middlewares.concat(fn);
@@ -154,11 +155,11 @@ export class Http extends EventEmitter implements IHttp.IHttp, IHttp.IFetch {
     this.middlewares.push(fn);
   }
   public async callMiddleware(
-    config: IHttp.MiddlewareConfig
-  ): Promise<IHttp.MiddlewareConfig | false> {
-    let cfg: IHttp.MiddlewareConfig = config;
+    config: NHttp.MiddlewareConfig
+  ): Promise<NHttp.MiddlewareConfig | false> {
+    let cfg: NHttp.MiddlewareConfig = config;
     for (const fn of this.middlewares) {
-      const rc: IHttp.MiddlewareConfig | false = await fn(cfg);
+      const rc: NHttp.MiddlewareConfig | false = await fn(cfg);
       if (rc) {
         cfg = rc;
       } else if (rc === false) {

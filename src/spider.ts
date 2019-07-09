@@ -1,9 +1,9 @@
 import { EventEmitter } from "events";
 import { Logger } from "log4js";
 import Schedule from "node-schedule";
-import * as IHttp from "../types/http.d";
-import * as IRule from "../types/rule.d";
-import * as ISpider from "../types/spider.d";
+import { Http as NHttp } from "../types/http.d";
+import { Rule as NRule } from "../types/rule.d";
+import { Spider as NSpider } from "../types/spider";
 import Http from "./http";
 import Rule from "./rule";
 import { createLogger } from "./utils/logger";
@@ -18,19 +18,19 @@ enum Status {
   Complete,
   Waiting
 }
-type startUrl = string | string[] | ISpider.urlsFn | Set<string>;
-class Spider extends EventEmitter implements ISpider.ISpider {
-  public static new(config: ISpider.Config) {
+type startUrl = string | string[] | NSpider.urlsFn | Set<string>;
+class Spider extends EventEmitter implements NSpider.ISpider {
+  public static new(config: NSpider.Config) {
     return new Spider(config);
   }
-  public config: ISpider.Config = {};
+  public config: NSpider.Config = {};
   public logger: Logger;
   public rules: Rule[] = [];
   public http: Http;
   public status: Status = Status.Waiting;
   public mode: Mode = Mode.production;
-  public errorMiddlewares: ISpider.ErrorMiddleware[] = [];
-  constructor(config: ISpider.Config, http?: Http) {
+  public errorMiddlewares: NSpider.ErrorMiddleware[] = [];
+  constructor(config: NSpider.Config, http?: Http) {
     super();
     this.config = { ...this.config, ...config };
     if (http) {
@@ -44,7 +44,7 @@ class Spider extends EventEmitter implements ISpider.ISpider {
     this.logger = createLogger(config.name || "spider", config.log);
     this.init(this.config);
   }
-  public init(config: ISpider.Config) {
+  public init(config: NSpider.Config) {
     if (config.rules) {
       this.initRules(config.rules);
     }
@@ -57,7 +57,7 @@ class Spider extends EventEmitter implements ISpider.ISpider {
     this.http.on("error", this.error.bind(this));
     this.http.on("completeAll", this.onCompleteAll.bind(this));
   }
-  public async start(urls: startUrl, config?: IHttp.Config) {
+  public async start(urls: startUrl = [], config?: NHttp.Config) {
     this.status = Status.Running;
     if (this.config.open && typeof this.config.open === "function") {
       this.logger.info(`执行打开函数`);
@@ -65,13 +65,13 @@ class Spider extends EventEmitter implements ISpider.ISpider {
     }
     this.push(urls, config);
   }
-  public test(urls: startUrl, config?: IHttp.Config) {
+  public test(urls: startUrl, config?: NHttp.Config) {
     this.mode = Mode.test;
     this.start(urls, config);
   }
   public push(
     urls: startUrl,
-    config: IHttp.Config = {},
+    config: NHttp.Config = {},
     priority: boolean = false
   ) {
     let arr: string[] = [];
@@ -87,7 +87,7 @@ class Spider extends EventEmitter implements ISpider.ISpider {
     }
     if (this.http.connect === 0 && arr.length === 0) {
       this.status = Status.Complete;
-      return
+      return;
     }
     arr.forEach((url: string) => {
       if (!url || typeof url !== "string") {
@@ -106,10 +106,10 @@ class Spider extends EventEmitter implements ISpider.ISpider {
   public rule(
     name: string,
     test: string | RegExp,
-    parse: IRule.IParse,
+    parse: NRule.IParse,
     ...args: any[]
   ): Promise<any> {
-    let config: IRule.Config = {};
+    let config: NRule.Config = {};
     const c = args[args.length - 1];
     if (typeof c === "object") {
       config = c;
@@ -125,20 +125,20 @@ class Spider extends EventEmitter implements ISpider.ISpider {
       config,
       parse,
       args,
-      (url: string, err: Error, cfg: IRule.Config) => {
+      (url: string, err: Error, cfg: NRule.Config) => {
         rej(url, err, cfg, this);
       }
     );
     this.rules.push(rule);
     return p;
   }
-  public use(...args: IHttp.DownloadMiddleware[]): void {
+  public use(...args: NHttp.DownloadMiddleware[]): void {
     this.http.appendMiddleware(args);
   }
   public async handler(params: {
     url: string;
     data: string | object;
-    config: IHttp.Config;
+    config: NHttp.Config;
   }): Promise<any> {
     const { url, data, config } = params;
     this.logger.info(`请求完成,等待处理,${url}`);
@@ -172,9 +172,9 @@ class Spider extends EventEmitter implements ISpider.ISpider {
     }, new Set<string>());
     this.push(urls);
   }
-  public error(params: { url: string; error: Error; config: IHttp.Config }) {
+  public error(params: { url: string; error: Error; config: NHttp.Config }) {
     const { url, error, config } = params;
-    this.errorMiddlewares.forEach((fn: ISpider.ErrorMiddleware) => {
+    this.errorMiddlewares.forEach((fn: NSpider.ErrorMiddleware) => {
       fn.call(this, url, error, config, this);
     });
   }
@@ -205,9 +205,9 @@ class Spider extends EventEmitter implements ISpider.ISpider {
       this.config.close.call(this, this);
     }
   }
-  public getRuleConfig(url: string): IRule.Config {
-    const result: IRule.Config = this.rules.reduce(
-      (config: IRule.Config, rule) => {
+  public getRuleConfig(url: string): NRule.Config {
+    const result: NRule.Config = this.rules.reduce(
+      (config: NRule.Config, rule) => {
         if (rule.test(url)) {
           return { ...config, ...rule.config };
         }
@@ -217,8 +217,8 @@ class Spider extends EventEmitter implements ISpider.ISpider {
     );
     return result;
   }
-  public initRules(rules: ISpider.rule[]) {
-    rules.forEach((rule: ISpider.rule) => {
+  public initRules(rules: NSpider.rule[]) {
+    rules.forEach((rule: NSpider.rule) => {
       const r = new Rule(
         rule.name,
         rule.test,

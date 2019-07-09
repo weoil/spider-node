@@ -1,10 +1,10 @@
-import * as IHttp from '../../types/http.d';
+import {Http} from '../../types/http.d';
 interface cacheMapImp {
   date: number;
 }
 export default async function noRepeat(
-  config: IHttp.MiddlewareConfig
-): Promise<IHttp.MiddlewareConfig | false> {
+  config: Http.MiddlewareConfig
+): Promise<Http.MiddlewareConfig | false> {
   let { url, overlist, cacheMap, rule, rootConfig, cacheTime } = config;
   if (!overlist) {
     rootConfig.overlist = config.overlist = overlist = new Set();
