@@ -1,6 +1,6 @@
 {
   "name": "spider-node",
-  "version": "1.0.0",
+  "version": "1.0.203",
   "description": "爬虫工具,根据传入的配置和规则爬取数据",
   "main": "./dist/index.js",
   "scripts": {
@@ -8,7 +8,7 @@
     "dev:watch": "nodemon ./dist/index.js",
     "dev:build": "webpack --config ./config/wp.test.config.js --progress",
     "build": "webpack --config ./config/wp.product.config.js --progress",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "mocha"
   },
   "license": "ISC",
   "devDependencies": {
@@ -19,15 +19,14 @@
     "@babel/preset-env": "^7.3.4",
     "@babel/preset-typescript": "^7.3.3",
     "@babel/runtime": "^7.3.4",
-    "@types/cheerio": "^0.22.10",
-    "@types/node": "^12.0.8",
-    "@types/node-schedule": "^1.2.3",
-    "@types/request": "^2.48.1",
     "awesome-typescript-loader": "^5.2.1",
     "babel-loader": "^8.0.6",
     "babel-plugin-add-module-exports": "^1.0.2",
     "binary-extensions": "^2.0.0",
     "concurrently": "^4.1.0",
+    "koa": "^2.7.0",
+    "koa-static": "^5.0.0",
+    "mocha": "^6.1.4",
     "nodemon": "^1.18.10",
     "ts-loader": "^5.3.3",
     "ts-node": "^8.3.0",
@@ -40,6 +39,10 @@
   },
   "dependencies": {
     "@babel/polyfill": "^7.4.4",
+    "@types/cheerio": "^0.22.10",
+    "@types/node": "^12.0.8",
+    "@types/node-schedule": "^1.2.3",
+    "@types/request": "^2.48.1",
     "cheerio": "^1.0.0-rc.2",
     "iconv-lite": "^0.4.24",
     "log4js": "^4.3.1",
