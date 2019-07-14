@@ -174,9 +174,7 @@ describe("spider", function() {
         {
           test: /\/cn.html/,
           config: {
-            http: {
-              charset: "gbk"
-            }
+            charset: "gbk"
           },
           async parse(url, data, $, config, spider) {
             const obj = $(".text")

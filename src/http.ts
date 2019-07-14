@@ -115,7 +115,8 @@ export class Http extends EventEmitter implements NHttp.IHttp, NHttp.IFetch {
         data: result
       };
       if (!$config.encoding) {
-        const charset = $config.charset;
+        const charset =
+          $config.charset || ($config.rule && $config.rule.charset);
         data.data = this.decode(result, charset);
       }
       try {

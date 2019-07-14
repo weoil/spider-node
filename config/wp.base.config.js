@@ -10,12 +10,12 @@ module.exports = merge(
     mode: "development",
     target: "node",
     entry: {
-      index: ['@babel/polyfill',resolve("src/index.ts")]
+      index: ["@babel/polyfill", resolve("src/index.ts")]
     },
     output: {
       path: resolve("dist"),
       filename: "[name].js",
-      libraryTarget: 'umd'
+      libraryTarget: "umd"
     },
     module: {
       rules: [
@@ -29,7 +29,10 @@ module.exports = merge(
             {
               loader: "ts-loader",
               options: {
-                transpileOnly: true
+                transpileOnly: true,
+                compilerOptions: {
+                  module: "ESNext"
+                }
               }
             }
           ]
@@ -43,7 +46,7 @@ module.exports = merge(
       },
       extensions: [".js", ".ts", ".json"]
     },
-    externals: [nodeExternals()],
+    externals: [nodeExternals()]
     // optimization: {
     //   splitChunks: {
     //     chunks: "initial",
