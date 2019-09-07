@@ -70,7 +70,7 @@ class Spider extends EventEmitter implements Spider.ISpider {
 	}
 	public push(
 		urls: startUrl,
-		config: HttpConfig = {},
+		config: Http.IHttpConstructorConfig = {},
 		priority: boolean = false
 	) {
 		let arr: string[] = [];
@@ -93,13 +93,9 @@ class Spider extends EventEmitter implements Spider.ISpider {
 				return;
 			}
 			this.logger.info(`任务推送:${url}`);
-			const ruleConfig = this.getRuleConfig(url);
-			const ruleHttp = (ruleConfig && ruleConfig.http) || {};
-			this.http.push(
-				url,
-				{ ...ruleHttp, rule: ruleConfig, ...config },
-				priority
-			);
+			const rule = this.getRule(url);
+			const ruleHttp = rule.config.http || {};
+			this.http.push(url, { ...ruleHttp, rule: rule, ...config }, priority);
 		});
 	}
 	public rule(
@@ -213,17 +209,13 @@ class Spider extends EventEmitter implements Spider.ISpider {
 			this.config.close.call(this, this);
 		}
 	}
-	public getRuleConfig(url: string): Rule.Config {
-		const result: Rule.Config = this.rules.reduce(
-			(config: Rule.Config, rule) => {
-				if (rule.test(url)) {
-					return { ...config, ...rule.config };
-				}
-				return config;
-			},
-			{}
-		);
-		return result;
+	public getRule(url: string) {
+		for (let r of this.rules) {
+			if (r.test(url)) {
+				return r;
+			}
+		}
+		throw new Error(`not fount Rule,url:${url}`);
 	}
 	public initRules(rules: Spider.rule[]) {
 		rules.forEach((rule: Spider.rule) => {

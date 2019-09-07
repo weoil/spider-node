@@ -5,6 +5,8 @@ declare namespace Rule {
 		include?: boolean;
 		http?: RuleHttpConfig;
 		charset?: string;
+		maxCollect?: number;
+		delay?: number;
 		[key: string]: any;
 	}
 	type IError = Spider.ErrorMiddleware;

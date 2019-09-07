@@ -31,7 +31,7 @@ declare namespace Spider {
 	export interface Config {
 		name?: string;
 		rules?: Array<rule>;
-		http?: HttpConfig;
+		http?: Http.IHttpConstructorConfig;
 		plan?: PlanConfig;
 		open?: (spider: Spider.ISpider) => Promise<any>;
 		close?: (spider: Spider.ISpider) => Promise<any>;
@@ -42,7 +42,7 @@ declare namespace Spider {
 	export interface ISpider {
 		config: Config;
 		rules: Rule.Rule[];
-		http: HttpConfig;
+		http: Http.IHttpConstructorConfig;
 		errorMiddlewares: ErrorMiddleware[];
 		init(config: Config): void;
 		test(
@@ -55,7 +55,7 @@ declare namespace Spider {
 		): any;
 		push(
 			urls: string[] | string | urlsFn | Set<string>,
-			config: Http.Config,
+			config: Http.IHttpConstructorConfig,
 			priority: boolean
 		): any;
 		rule(
@@ -77,7 +77,7 @@ declare namespace Spider {
 		}): Promise<any>;
 		error(params: { url: string; error: Error; config: Http.Config }): void;
 		onCompleteAll(): void;
-		getRuleConfig(url: string): Rule.Config;
+		getRule(url: string): Rule.Rule;
 		initRules(rules: rule[]): void;
 	}
 }

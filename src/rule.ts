@@ -32,6 +32,9 @@ export class Rule implements Rule.Rule {
 	) {
 		this.name = name;
 		this.rule = new RegExp(rule);
+		if (config.delay) {
+			config.maxCollect = 1;
+		}
 		this.config = config;
 		this.parse = parse;
 		if (pipeline) {

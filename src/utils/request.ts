@@ -1,5 +1,6 @@
 import request from 'request';
 export interface CoreOptions extends request.CoreOptions {}
+
 export interface HttpConfig extends CoreOptions {
 	name?: string;
 	url?: string;
@@ -8,7 +9,7 @@ export interface HttpConfig extends CoreOptions {
 		[key: string]: any;
 	};
 	charset?: string;
-	rule?: Rule.Config;
+	rule: Rule.Rule;
 	cacheTime?: number;
 	overlist?: Set<string>;
 	[key: string]: any;

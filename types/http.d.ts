@@ -1,5 +1,8 @@
 declare namespace Http {
-	export interface Config {
+	export interface HttpRuleConfig extends Rule.Config {
+		rule: Rule.Rule;
+	}
+	export interface IHttpConstructorConfig {
 		name?: string;
 		url?: string;
 		retry?: number;
@@ -7,14 +10,17 @@ declare namespace Http {
 			[key: string]: any;
 		};
 		charset?: string;
-		rule?: Rule.Config;
 		cacheTime?: number;
 		overlist?: Set<string>;
 		[key: string]: any;
+		repeat?: boolean;
+	}
+	export interface Config extends IHttpConstructorConfig {
+		rule: Rule.Rule;
 	}
 	export interface MiddlewareConfig extends Config {
 		url: string;
-		rootConfig: Config;
+		rootConfig: IHttpConstructorConfig;
 	}
 	export interface Result {
 		url: string;
@@ -28,10 +34,10 @@ declare namespace Http {
 		maxConnect: number;
 		connect: number;
 		middlewares: Array<DownloadMiddleware>;
-		config: Config;
-		inspect(): boolean;
+		config: IHttpConstructorConfig;
+		inspect(url: string, config: Config): boolean;
 		run(url: string, config: Config): Promise<Result>;
-		callMiddleware(config: Config): Config | false;
+		callMiddleware(config: Config): Promise<Http.MiddlewareConfig | false>;
 	}
 
 	export interface IFetch {

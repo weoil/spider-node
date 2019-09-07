@@ -134,6 +134,79 @@ describe('spider', function() {
 		});
 		s.start('http://127.0.0.1:8881/links.html');
 	});
+	it('指定rule延迟', function(done) {
+		this.timeout(3000);
+		let taskCount = 0;
+		let startDate = Date.now();
+		const s = new spider({
+			name: 'name',
+			log: false,
+			http: {
+				timeout: 1000,
+			},
+			rules: [
+				{
+					test: /\/cn.html/,
+					config: {
+						charset: 'gbk',
+					},
+					async parse(url, data, $, config, spider) {
+						taskCount++;
+					},
+					error(url, error) {
+						s.cancel();
+						done(error);
+					},
+				},
+				{
+					test: /\/spider-\S\.html/,
+					config: {
+						include: false,
+						delay: 2000,
+					},
+					async parse(url, data, $, config, spider) {
+						if (taskCount === 0) {
+							assert.equal(
+								$('.spider')
+									.text()
+									.split('-')[1]
+									.trim(),
+								'a'
+							);
+						} else if (taskCount === 3) {
+							assert.equal(
+								$('.spider')
+									.text()
+									.split('-')[1]
+									.trim(),
+								'b'
+							);
+							if (Date.now() - startDate >= 2000) {
+								done();
+							}
+						}
+						taskCount++;
+					},
+					error(url, error) {
+						s.cancel();
+						done(error);
+					},
+				},
+			],
+			errorMiddleware: [
+				async (url, error) => {
+					s.cancel();
+					done(error);
+				},
+			],
+		});
+		s.start([
+			'http://127.0.0.1:8881/spider-a.html',
+			'http://127.0.0.1:8881/spider-b.html',
+			'http://127.0.0.1:8881/cn.html',
+			'http://127.0.0.1:8881/cn.html',
+		]);
+	});
 	it('使用open发送post请求', function(done) {
 		this.timeout(1000);
 		const s = new spider({

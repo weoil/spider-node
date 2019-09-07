@@ -5,6 +5,7 @@ import { Logger } from 'log4js';
 import rp from 'request-promise';
 import NoRepeatMid from './middleware/repeat';
 import { createLogger } from './utils/logger';
+
 interface IHttpTask {
 	url: string;
 	config: Http.Config;
@@ -18,15 +19,16 @@ export class Http extends EventEmitter implements Http.IHttp, Http.IFetch {
 	public delay: number = 0;
 	public maxConnect: number = Infinity;
 	public connect: number = 0;
-	public middlewares: Http.DownloadMiddleware[] = [];
+	public middlewares: Http.DownloadMiddleware[] = [NoRepeatMid];
 	public timer: NodeJS.Timeout | null = null;
-	public config: HttpConfig = {
+	public ruleConnect: Map<RegExp | string, number> = new Map();
+	public config: Http.IHttpConstructorConfig = {
 		overlist: new Set(),
 		cacheMap: new Map(),
 	};
 	private queue: IHttpTask[] = [];
 	constructor(
-		config: HttpConfig = {
+		config: Http.IHttpConstructorConfig = {
 			repeat: false,
 		},
 		middlewares?: Http.DownloadMiddleware[]
@@ -43,14 +45,17 @@ export class Http extends EventEmitter implements Http.IHttp, Http.IFetch {
 			this.delay = cfg.delay;
 			delete cfg.delay;
 		}
-		if (!cfg.repeat) {
-			this.middlewares.push(NoRepeatMid);
-			delete cfg.repeat;
-		}
 		if (middlewares) {
 			this.middlewares = [...this.middlewares, ...middlewares];
 		}
 	}
+	// addRuleConnect(config: Http.HttpRuleConfig) {
+	// 	if (config.rule) {
+	// 		// rule键：rule类：正则
+	// 		const key = config.rule.rule;
+	// 		const val = this.ruleConnect.get(key.rule) || 0;
+	// 	}
+	// }
 	public async request(url: string, config: HttpConfig) {
 		const tmp: any = config;
 		const result = await rp({
@@ -59,19 +64,29 @@ export class Http extends EventEmitter implements Http.IHttp, Http.IFetch {
 		});
 		return result;
 	}
-	public inspect(): boolean {
+	// 检测是否可以直接运行
+	public inspect(url?: string, config?: HttpConfig): boolean {
 		// console.log(this.connect, this.maxConnect, this.queue.length)
-		if (this.connect < this.maxConnect) {
+		let max = this.maxConnect;
+		let cur = this.connect;
+		if (config && config.rule) {
+			// rule键：rule类：正则
+			const key = config.rule.rule;
+			const val = this.ruleConnect.get(key) || 0;
+			max = Math.min(config.rule.config.maxCollect || max, max);
+			cur = Math.max(val, cur);
+		}
+		if (cur < max) {
 			return true;
 		}
 		return false;
 	}
 	public async push(
 		url: string,
-		config: HttpConfig = {},
+		config: HttpConfig,
 		priority: boolean = false
 	): Promise<any> {
-		if (this.inspect()) {
+		if (this.inspect(url, config)) {
 			this.run(url, config);
 			return;
 		}
@@ -89,8 +104,10 @@ export class Http extends EventEmitter implements Http.IHttp, Http.IFetch {
 		}
 		this.config.overlist.add(url);
 	}
-	public async run(url: string, config: HttpConfig = {}): Promise<any> {
+	public async run(url: string, config: HttpConfig): Promise<any> {
+		const rule = config.rule;
 		this.connect++;
+		this.ruleConnect.set(rule.rule, (this.ruleConnect.get(rule.rule) || 0) + 1);
 		this.logger.info(`正在进行请求,目前请求数量:${this.connect}:url:${url}`);
 		let jump = false;
 		try {
@@ -100,6 +117,7 @@ export class Http extends EventEmitter implements Http.IHttp, Http.IFetch {
 				...config,
 				rootConfig: this.config,
 			});
+
 			if ($config === false) {
 				this.logger.info(`网络处理中间件阻止继续执:${url}`);
 				jump = true;
@@ -110,7 +128,6 @@ export class Http extends EventEmitter implements Http.IHttp, Http.IFetch {
 				encoding: null,
 				...$config,
 			});
-
 			const data: Http.Result = {
 				url,
 				config: $config,
@@ -118,7 +135,7 @@ export class Http extends EventEmitter implements Http.IHttp, Http.IFetch {
 			};
 			if (!$config.encoding) {
 				const charset =
-					$config.charset || ($config.rule && $config.rule.charset);
+					$config.charset || ($config.rule && $config.rule.config.charset);
 				data.data = this.decode(result, charset);
 			}
 			try {
@@ -128,6 +145,7 @@ export class Http extends EventEmitter implements Http.IHttp, Http.IFetch {
 			} catch (_) {
 				// try
 			}
+
 			this.logger.info(`网络请求完成:${url}`);
 			this.emit('complete', data);
 		} catch (error) {
@@ -138,13 +156,14 @@ export class Http extends EventEmitter implements Http.IHttp, Http.IFetch {
 			}
 			this.emit('error', { url, config, error });
 		} finally {
-			if (this.delay && !jump) {
+			const delay = rule.config.delay || this.delay;
+			if (delay && !jump) {
 				setTimeout(() => {
-					this.logger.info(`网络请求等待延迟:${url},${this.delay}`);
-					this.complete();
-				}, this.delay);
+					this.logger.info(`网络请求等待延迟:${url},${delay}`);
+					this.complete(config);
+				}, delay);
 			} else {
-				this.complete();
+				this.complete(config);
 			}
 		}
 	}
@@ -191,12 +210,25 @@ export class Http extends EventEmitter implements Http.IHttp, Http.IFetch {
 		}
 		return iconv.decode(buffer, charset);
 	}
-	private complete(): void {
+	private complete(config: HttpConfig): void {
 		this.connect--;
+		// 对应规则的连接数 --
+		const val = this.ruleConnect.get(config.rule.rule);
+		if (val) {
+			this.ruleConnect.set(config.rule.rule, val - 1);
+		}
+
 		while (this.inspect()) {
 			const task = this.queue.shift();
 			if (task) {
-				this.push(task.url, task.config);
+				// 检查规则如果目前的url规则内需要延迟，则下个时序再插入回队列，防止死循环
+				if (this.inspect(task.url, task.config)) {
+					this.push(task.url, task.config);
+				} else {
+					setTimeout(() => {
+						this.push(task.url, task.config);
+					}, 0);
+				}
 			} else {
 				break;
 			}

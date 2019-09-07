@@ -1,10 +1,12 @@
-import { Http } from '../../types/http.d';
 interface cacheMapImp {
 	date: number;
 }
 export default async function noRepeat(
 	config: Http.MiddlewareConfig
 ): Promise<Http.MiddlewareConfig | false> {
+	if (config.repeat) {
+		return config;
+	}
 	let { url, overlist, cacheMap, rule, rootConfig, cacheTime } = config;
 	if (!overlist) {
 		rootConfig.overlist = config.overlist = overlist = new Set();
@@ -15,7 +17,7 @@ export default async function noRepeat(
 			cacheMapImp
 		>();
 	}
-	const $cacheTime = cacheTime || (rule && rule.cacheTime);
+	const $cacheTime = cacheTime || (rule && rule.config.cacheTime);
 	if ($cacheTime) {
 		const $cache = cacheMap.get(url);
 		if ($cache && Date.now() - $cache.date >= $cacheTime) {
