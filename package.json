@@ -9,7 +9,8 @@
     "dev:watch": "nodemon ./dist/index.js",
     "dev:build": "webpack --config ./config/wp.test.config.js --progress",
     "build": "webpack --config ./config/wp.product.config.js --progress",
-    "test": "mocha"
+    "test": "mocha",
+    "fix": "eslint --fix ."
   },
   "license": "ISC",
   "devDependencies": {
@@ -31,6 +32,7 @@
     "eslint": "^6.3.0",
     "eslint-config-prettier": "^6.1.0",
     "eslint-import-resolver-webpack": "^0.11.1",
+    "eslint-loader": "^3.0.0",
     "eslint-plugin-import": "^2.18.2",
     "eslint-plugin-prettier": "^3.1.0",
     "koa": "^2.7.0",
