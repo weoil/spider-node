@@ -1,7 +1,6 @@
+import { HttpConfig } from './utils/request';
 import * as Cheerio from 'cheerio';
 import URL from 'url';
-import { Http as NHttp } from "../types/http.d";
-import { Rule as NRule } from "../types/rule.d";
 import Spider from './spider';
 
 // interface IRule {
@@ -14,25 +13,28 @@ import Spider from './spider';
 //   test: (data: string) => boolean
 //   call: (data: string) => any
 // }
-export class Rule {
+export class Rule implements Rule.Rule {
   public name?: string;
   public rule: RegExp;
-  public config: NRule.Config;
-  public parse?: NRule.IParse;
-  public pipelines: NRule.IPipeline[] = [];
-  public error?: NRule.IError;
+  public config: Rule.Config;
+  public parse?: Rule.IParse;
+  public pipelines: Rule.IPipeline[] = [];
+  public error?: Rule.IError;
   constructor(
     name: string = 'rule',
     rule: string | RegExp,
-    config: NRule.Config = {
-      baseUrl: ''
+    config: Rule.Config = {
+      baseUrl: '',
     },
-    parse?: NRule.IParse,
-    pipeline?: NRule.IPipeline[] | NRule.IPipeline,
-    error?: NRule.IError
+    parse?: Rule.IParse,
+    pipeline?: Rule.IPipeline[] | Rule.IPipeline,
+    error?: Rule.IError
   ) {
     this.name = name;
     this.rule = new RegExp(rule);
+    if (config.delay) {
+      config.maxCollect = 1;
+    }
     this.config = config;
     this.parse = parse;
     if (pipeline) {
@@ -62,8 +64,8 @@ export class Rule {
   public async call(
     url: string,
     data: string | any,
-    config: NHttp.Config,
-    context: Spider
+    config: HttpConfig,
+    context: Spider.ISpider
   ): Promise<any> {
     if (!this.test(url)) {
       return;
@@ -96,8 +98,8 @@ export class Rule {
   public callError(
     url: string,
     error: Error,
-    config: NHttp.Config,
-    context: Spider
+    config: Http.Config,
+    context: Spider.ISpider
   ): void {
     if (this.error) {
       this.error.call(context, url, error, config, context);

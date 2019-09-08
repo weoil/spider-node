@@ -1,21 +1,22 @@
-const merge = require("webpack-merge");
-const path = require("path");
-const nodeExternals = require("webpack-node-externals");
+const merge = require('webpack-merge');
+const path = require('path');
+const nodeExternals = require('webpack-node-externals');
+
 function resolve(dir) {
-  return path.resolve(__dirname, "../", dir);
+  return path.resolve(__dirname, '../', dir);
 }
 module.exports = merge(
   {},
   {
-    mode: "development",
-    target: "node",
+    mode: 'development',
+    target: 'node',
     entry: {
-      index: ["@babel/polyfill", resolve("src/index.ts")]
+      index: ['@babel/polyfill', resolve('src/index.ts')],
     },
     output: {
-      path: resolve("dist"),
-      filename: "[name].js",
-      libraryTarget: "umd"
+      path: resolve('dist'),
+      filename: '[name].js',
+      libraryTarget: 'umd',
     },
     module: {
       rules: [
@@ -24,29 +25,32 @@ module.exports = merge(
           exclude: /(node_modules)/,
           use: [
             {
-              loader: "babel-loader"
+              loader: 'babel-loader',
             },
             {
-              loader: "ts-loader",
+              loader: 'ts-loader',
               options: {
                 transpileOnly: true,
                 compilerOptions: {
-                  module: "ESNext"
-                }
-              }
-            }
-          ]
-        }
-      ]
+                  module: 'ESNext',
+                },
+              },
+            },
+            {
+              loader: 'eslint-loader',
+            },
+          ],
+        },
+      ],
     },
     resolve: {
       alias: {
-        "@": resolve("src/"),
-        "@@": resolve("./")
+        '@': resolve('src/'),
+        '@@': resolve('./'),
       },
-      extensions: [".js", ".ts", ".json"]
+      extensions: ['.js', '.ts', '.json'],
     },
-    externals: [nodeExternals()]
+    externals: [nodeExternals()],
     // optimization: {
     //   splitChunks: {
     //     chunks: "initial",

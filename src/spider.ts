@@ -1,36 +1,35 @@
-import { EventEmitter } from "events";
-import { Logger } from "log4js";
-import Schedule from "node-schedule";
-import { Http as NHttp } from "../types/http.d";
-import { Rule as NRule } from "../types/rule.d";
-import { Spider as NSpider } from "../types/spider";
-import Http from "./http";
-import Rule from "./rule";
-import { createLogger } from "./utils/logger";
+import { HttpConfig } from './utils/request';
+import { EventEmitter } from 'events';
+import { Logger } from 'log4js';
+import Schedule, { Job } from 'node-schedule';
+import Http from './http';
+import Rule from './rule';
+import { createLogger } from './utils/logger';
 
 enum Mode {
   development,
   production,
-  test
+  test,
 }
 enum Status {
   Running,
   Complete,
-  Waiting
+  Waiting,
 }
-type startUrl = string | string[] | NSpider.urlsFn | Set<string>;
-class Spider extends EventEmitter implements NSpider.ISpider {
-  public static new(config: NSpider.Config) {
+type startUrl = string | string[] | Spider.urlsFn | Set<string>;
+class Spider extends EventEmitter implements Spider.ISpider {
+  public static new(config: Spider.Config) {
     return new Spider(config);
   }
-  public config: NSpider.Config = {};
+  cornJob: Job | null = null;
+  public config: Spider.Config = {};
   public logger: Logger;
   public rules: Rule[] = [];
   public http: Http;
   public status: Status = Status.Waiting;
   public mode: Mode = Mode.production;
-  public errorMiddlewares: NSpider.ErrorMiddleware[] = [];
-  constructor(config: NSpider.Config, http?: Http) {
+  public errorMiddlewares: Spider.ErrorMiddleware[] = [];
+  constructor(config: Spider.Config, http?: Http) {
     super();
     this.config = { ...this.config, ...config };
     if (http) {
@@ -41,10 +40,10 @@ class Spider extends EventEmitter implements NSpider.ISpider {
         config.downloadMiddleware
       );
     }
-    this.logger = createLogger(config.name || "spider", config.log);
+    this.logger = createLogger(config.name || 'spider', config.log);
     this.init(this.config);
   }
-  public init(config: NSpider.Config) {
+  public init(config: Spider.Config) {
     if (config.rules) {
       this.initRules(config.rules);
     }
@@ -53,29 +52,29 @@ class Spider extends EventEmitter implements NSpider.ISpider {
         config.errorMiddleware
       );
     }
-    this.http.on("complete", this.handler.bind(this));
-    this.http.on("error", this.error.bind(this));
-    this.http.on("completeAll", this.onCompleteAll.bind(this));
+    this.http.on('complete', this.handler.bind(this));
+    this.http.on('error', this.error.bind(this));
+    this.http.on('completeAll', this.onCompleteAll.bind(this));
   }
-  public async start(urls: startUrl = [], config?: NHttp.Config) {
+  public async start(urls: startUrl = [], config?: HttpConfig) {
     this.status = Status.Running;
-    if (this.config.open && typeof this.config.open === "function") {
+    if (this.config.open && typeof this.config.open === 'function') {
       this.logger.info(`执行打开函数`);
       await this.config.open.call(this, this);
     }
     this.push(urls, config);
   }
-  public test(urls: startUrl, config?: NHttp.Config) {
+  public test(urls: startUrl, config?: HttpConfig) {
     this.mode = Mode.test;
     this.start(urls, config);
   }
   public push(
     urls: startUrl,
-    config: NHttp.Config = {},
+    config: Http.IHttpConstructorConfig = {},
     priority: boolean = false
   ) {
     let arr: string[] = [];
-    if (typeof urls === "function") {
+    if (typeof urls === 'function') {
       urls = urls();
     }
     if (Array.isArray(urls)) {
@@ -90,28 +89,24 @@ class Spider extends EventEmitter implements NSpider.ISpider {
       return;
     }
     arr.forEach((url: string) => {
-      if (!url || typeof url !== "string") {
+      if (!url || typeof url !== 'string') {
         return;
       }
       this.logger.info(`任务推送:${url}`);
-      const ruleConfig = this.getRuleConfig(url);
-      const ruleHttp = (ruleConfig && ruleConfig.http) || {};
-      this.http.push(
-        url,
-        { ...ruleHttp, rule: ruleConfig, ...config },
-        priority
-      );
+      const rule = this.getRule(url);
+      const ruleHttp = rule.config.http || {};
+      this.http.push(url, { ...ruleHttp, rule: rule, ...config }, priority);
     });
   }
   public rule(
     name: string,
     test: string | RegExp,
-    parse: NRule.IParse,
+    parse: Rule.IParse,
     ...args: any[]
   ): Promise<any> {
-    let config: NRule.Config = {};
+    let config: Rule.Config = {};
     const c = args[args.length - 1];
-    if (typeof c === "object") {
+    if (typeof c === 'object') {
       config = c;
       args.pop();
     }
@@ -125,20 +120,20 @@ class Spider extends EventEmitter implements NSpider.ISpider {
       config,
       parse,
       args,
-      (url: string, err: Error, cfg: NRule.Config) => {
+      (url: string, err: Error, cfg: Rule.Config) => {
         rej(url, err, cfg, this);
       }
     );
     this.rules.push(rule);
     return p;
   }
-  public use(...args: NHttp.DownloadMiddleware[]): void {
+  public use(...args: Http.DownloadMiddleware[]): void {
     this.http.appendMiddleware(args);
   }
   public async handler(params: {
     url: string;
     data: string | object;
-    config: NHttp.Config;
+    config: Http.Config;
   }): Promise<any> {
     const { url, data, config } = params;
     this.logger.info(`请求完成,等待处理,${url}`);
@@ -159,7 +154,7 @@ class Spider extends EventEmitter implements NSpider.ISpider {
         r.callError(url, error, config, this);
       }
     });
-    if (!include || typeof data !== "string" || this.mode === Mode.test) {
+    if (!include || typeof data !== 'string' || this.mode === Mode.test) {
       return;
     }
     this.logger.info(`正在提取匹配url:${url}`);
@@ -172,18 +167,27 @@ class Spider extends EventEmitter implements NSpider.ISpider {
     }, new Set<string>());
     this.push(urls);
   }
-  public error(params: { url: string; error: Error; config: NHttp.Config }) {
+  public error(params: { url: string; error: Error; config: Http.Config }) {
     const { url, error, config } = params;
-    this.errorMiddlewares.forEach((fn: NSpider.ErrorMiddleware) => {
+    this.errorMiddlewares.forEach((fn: Spider.ErrorMiddleware) => {
       fn.call(this, url, error, config, this);
     });
   }
   // corntab 语法定时任务 -> 秒 分 时 日 月 周几
-  public plan(cron: string, urls: startUrl, immediate: boolean = true): void {
+  public plan(
+    cron: string,
+    urls: startUrl,
+    immediate: boolean = true,
+    config: any = { tz: 'Asia/Shanghai' }
+  ): void {
     if (immediate) {
       this.start(urls);
     }
-    Schedule.scheduleJob(cron, () => {
+    const $config: any = {
+      rule: cron,
+      ...config,
+    };
+    this.cornJob = Schedule.scheduleJob($config, () => {
       if (this.status === Status.Running) {
         return;
       }
@@ -200,25 +204,21 @@ class Spider extends EventEmitter implements NSpider.ISpider {
         this.logger.info(`执行定时任务`);
         this.push(urls);
       }, time);
-    } else if (this.config.close && typeof this.config.close === "function") {
+    } else if (this.config.close && typeof this.config.close === 'function') {
       this.logger.info(`执行关闭函数`);
       this.config.close.call(this, this);
     }
   }
-  public getRuleConfig(url: string): NRule.Config {
-    const result: NRule.Config = this.rules.reduce(
-      (config: NRule.Config, rule) => {
-        if (rule.test(url)) {
-          return { ...config, ...rule.config };
-        }
-        return config;
-      },
-      {}
-    );
-    return result;
+  public getRule(url: string) {
+    for (let r of this.rules) {
+      if (r.test(url)) {
+        return r;
+      }
+    }
+    throw new Error(`not fount Rule,url:${url}`);
   }
-  public initRules(rules: NSpider.rule[]) {
-    rules.forEach((rule: NSpider.rule) => {
+  public initRules(rules: Spider.rule[]) {
+    rules.forEach((rule: Spider.rule) => {
       const r = new Rule(
         rule.name,
         rule.test,
@@ -230,6 +230,11 @@ class Spider extends EventEmitter implements NSpider.ISpider {
       this.rules.push(r);
     });
     this.logger.info(`初始化规则,共找到${this.rules.length}个`);
+  }
+  public cancel() {
+    if (this.cornJob) {
+      this.cornJob.cancel(false);
+    }
   }
 }
 export default Spider;
