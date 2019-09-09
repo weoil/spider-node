@@ -1,11 +1,10 @@
-import { HttpConfig } from './utils/request';
 import { EventEmitter } from 'events';
 import { Logger } from 'log4js';
 import Schedule, { Job } from 'node-schedule';
 import Http from './http';
 import Rule from './rule';
 import { createLogger } from './utils/logger';
-
+import { ISpider, IRule, IHttp } from '../types';
 enum Mode {
   development,
   production,
@@ -16,20 +15,21 @@ enum Status {
   Complete,
   Waiting,
 }
-type startUrl = string | string[] | Spider.urlsFn | Set<string>;
-class Spider extends EventEmitter implements Spider.ISpider {
-  public static new(config: Spider.Config) {
+type startUrl = string | string[] | ISpider.urlsFn | Set<string>;
+class Spider extends EventEmitter {
+  public static new(config: ISpider.Config) {
     return new Spider(config);
   }
   cornJob: Job | null = null;
-  public config: Spider.Config = {};
+  public config: ISpider.Config = {};
   public logger: Logger;
   public rules: Rule[] = [];
   public http: Http;
   public status: Status = Status.Waiting;
   public mode: Mode = Mode.production;
-  public errorMiddlewares: Spider.ErrorMiddleware[] = [];
-  constructor(config: Spider.Config, http?: Http) {
+  public errorMiddlewares: ISpider.ErrorMiddleware[] = [];
+  public isPlan: boolean = false;
+  constructor(config: ISpider.Config, http?: Http) {
     super();
     this.config = { ...this.config, ...config };
     if (http) {
@@ -43,7 +43,7 @@ class Spider extends EventEmitter implements Spider.ISpider {
     this.logger = createLogger(config.name || 'spider', config.log);
     this.init(this.config);
   }
-  public init(config: Spider.Config) {
+  private init(config: ISpider.Config) {
     if (config.rules) {
       this.initRules(config.rules);
     }
@@ -56,7 +56,7 @@ class Spider extends EventEmitter implements Spider.ISpider {
     this.http.on('error', this.error.bind(this));
     this.http.on('completeAll', this.onCompleteAll.bind(this));
   }
-  public async start(urls: startUrl = [], config?: HttpConfig) {
+  public async start(urls: startUrl = [], config?: IHttp.HttpConfig) {
     this.status = Status.Running;
     if (this.config.open && typeof this.config.open === 'function') {
       this.logger.info(`执行打开函数`);
@@ -64,13 +64,13 @@ class Spider extends EventEmitter implements Spider.ISpider {
     }
     this.push(urls, config);
   }
-  public test(urls: startUrl, config?: HttpConfig) {
+  public test(urls: startUrl, config?: IHttp.HttpConfig) {
     this.mode = Mode.test;
     this.start(urls, config);
   }
   public push(
     urls: startUrl,
-    config: Http.IHttpConstructorConfig = {},
+    config: IHttp.HttpConstructorConfig = {},
     priority: boolean = false
   ) {
     let arr: string[] = [];
@@ -101,10 +101,10 @@ class Spider extends EventEmitter implements Spider.ISpider {
   public rule(
     name: string,
     test: string | RegExp,
-    parse: Rule.IParse,
+    parse: IRule.RuleParse,
     ...args: any[]
   ): Promise<any> {
-    let config: Rule.Config = {};
+    let config: IRule.RuleConfig = {};
     const c = args[args.length - 1];
     if (typeof c === 'object') {
       config = c;
@@ -120,20 +120,20 @@ class Spider extends EventEmitter implements Spider.ISpider {
       config,
       parse,
       args,
-      (url: string, err: Error, cfg: Rule.Config) => {
+      (url: string, err: Error, cfg: IRule.RuleConfig) => {
         rej(url, err, cfg, this);
       }
     );
     this.rules.push(rule);
     return p;
   }
-  public use(...args: Http.DownloadMiddleware[]): void {
+  public use(...args: IHttp.DownloadMiddleware[]): void {
     this.http.appendMiddleware(args);
   }
-  public async handler(params: {
+  private async handler(params: {
     url: string;
     data: string | object;
-    config: Http.Config;
+    config: IHttp.HttpConfig;
   }): Promise<any> {
     const { url, data, config } = params;
     this.logger.info(`请求完成,等待处理,${url}`);
@@ -167,9 +167,13 @@ class Spider extends EventEmitter implements Spider.ISpider {
     }, new Set<string>());
     this.push(urls);
   }
-  public error(params: { url: string; error: Error; config: Http.Config }) {
+  public error(params: {
+    url: string;
+    error: Error;
+    config: IHttp.HttpConfig;
+  }) {
     const { url, error, config } = params;
-    this.errorMiddlewares.forEach((fn: Spider.ErrorMiddleware) => {
+    this.errorMiddlewares.forEach((fn: ISpider.ErrorMiddleware) => {
       fn.call(this, url, error, config, this);
     });
   }
@@ -180,6 +184,7 @@ class Spider extends EventEmitter implements Spider.ISpider {
     immediate: boolean = true,
     config: any = { tz: 'Asia/Shanghai' }
   ): void {
+    this.isPlan = true;
     if (immediate) {
       this.start(urls);
     }
@@ -194,19 +199,14 @@ class Spider extends EventEmitter implements Spider.ISpider {
       this.start(urls);
     });
   }
-  public onCompleteAll() {
+  private onCompleteAll() {
     this.status = Status.Complete;
     this.logger.info(`任务全部完成`);
-    if (this.config.plan) {
-      const { time, urls } = this.config.plan;
-      this.logger.info(`等待执行计划任务,剩余时间${time}`);
-      setTimeout(() => {
-        this.logger.info(`执行定时任务`);
-        this.push(urls);
-      }, time);
-    } else if (this.config.close && typeof this.config.close === 'function') {
-      this.logger.info(`执行关闭函数`);
-      this.config.close.call(this, this);
+    if (!this.isPlan) {
+      if (this.config.close && typeof this.config.close === 'function') {
+        this.logger.info(`执行关闭函数`);
+        this.config.close.call(this, this);
+      }
     }
   }
   public getRule(url: string) {
@@ -217,8 +217,11 @@ class Spider extends EventEmitter implements Spider.ISpider {
     }
     throw new Error(`not fount Rule,url:${url}`);
   }
-  public initRules(rules: Spider.rule[]) {
-    rules.forEach((rule: Spider.rule) => {
+  public initRules(
+    rules: ISpider.SpiderRuleConfig[] | ISpider.SpiderRuleConfig
+  ) {
+    const ruleArr = Array.isArray(rules) ? rules : [rules];
+    ruleArr.forEach((rule: ISpider.SpiderRuleConfig) => {
       const r = new Rule(
         rule.name,
         rule.test,
@@ -229,7 +232,6 @@ class Spider extends EventEmitter implements Spider.ISpider {
       );
       this.rules.push(r);
     });
-    this.logger.info(`初始化规则,共找到${this.rules.length}个`);
   }
   public cancel() {
     if (this.cornJob) {

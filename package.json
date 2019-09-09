@@ -1,6 +1,6 @@
 {
   "name": "spider-node",
-  "version": "1.0.5",
+  "version": "1.0.52",
   "description": "爬虫工具,根据传入的配置和规则爬取数据",
   "main": "./dist/index.js",
   "module": "./dist/index.js",

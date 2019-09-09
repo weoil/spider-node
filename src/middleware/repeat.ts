@@ -1,9 +1,10 @@
+import { IHttp } from '../../types';
 interface cacheMapImp {
   date: number;
 }
 export default async function noRepeat(
-  config: Http.MiddlewareConfig
-): Promise<Http.MiddlewareConfig | false> {
+  config: IHttp.HttpMiddlewareConfig
+): Promise<IHttp.HttpMiddlewareConfig | false> {
   if (config.repeat) {
     return config;
   }

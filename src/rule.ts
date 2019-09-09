@@ -1,7 +1,7 @@
-import { HttpConfig } from './utils/request';
 import * as Cheerio from 'cheerio';
 import URL from 'url';
 import Spider from './spider';
+import { ISpider, IRule, IHttp } from '../types';
 
 // interface IRule {
 //   name: string
@@ -13,22 +13,22 @@ import Spider from './spider';
 //   test: (data: string) => boolean
 //   call: (data: string) => any
 // }
-export class Rule implements Rule.Rule {
+export class Rule {
   public name?: string;
   public rule: RegExp;
-  public config: Rule.Config;
-  public parse?: Rule.IParse;
-  public pipelines: Rule.IPipeline[] = [];
-  public error?: Rule.IError;
+  public config: IRule.RuleConfig;
+  public parse?: IRule.RuleParse;
+  public pipelines: IRule.RulePipeline[] = [];
+  public error?: IRule.RuleError;
   constructor(
     name: string = 'rule',
     rule: string | RegExp,
-    config: Rule.Config = {
+    config: IRule.RuleConfig = {
       baseUrl: '',
     },
-    parse?: Rule.IParse,
-    pipeline?: Rule.IPipeline[] | Rule.IPipeline,
-    error?: Rule.IError
+    parse?: IRule.RuleParse,
+    pipeline?: IRule.RulePipeline[] | IRule.RulePipeline,
+    error?: IRule.RuleError
   ) {
     this.name = name;
     this.rule = new RegExp(rule);
@@ -64,8 +64,8 @@ export class Rule implements Rule.Rule {
   public async call(
     url: string,
     data: string | any,
-    config: HttpConfig,
-    context: Spider.ISpider
+    config: IHttp.HttpConfig,
+    context: Spider
   ): Promise<any> {
     if (!this.test(url)) {
       return;
@@ -98,15 +98,21 @@ export class Rule implements Rule.Rule {
   public callError(
     url: string,
     error: Error,
-    config: Http.Config,
-    context: Spider.ISpider
+    config: IHttp.HttpConfig,
+    context: Spider
   ): void {
     if (this.error) {
       this.error.call(context, url, error, config, context);
     }
   }
   public isInclude() {
+    // undefind情况下为true
     return this.config.include === false ? false : true;
   }
+}
+export function createRule(
+  rule: ISpider.SpiderRuleConfig | ISpider.SpiderRuleConfig[]
+) {
+  return rule;
 }
 export default Rule;
