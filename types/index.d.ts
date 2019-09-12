@@ -58,7 +58,7 @@ export namespace IRule {
     config: IHttp.HttpConfig,
     spider: Spider
   ) => any;
-  type RulePipeline = (item?: any, spider?: Spider) => any;
+  type RulePipeline = (item: any, spider: Spider) => any;
 }
 
 export namespace IHttp {

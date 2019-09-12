@@ -29,6 +29,7 @@ class Spider extends EventEmitter {
   public mode: Mode = Mode.production;
   public errorMiddlewares: ISpider.ErrorMiddleware[] = [];
   public isPlan: boolean = false;
+  private handlingCount: number = 0;
   constructor(config: ISpider.Config, http?: Http) {
     super();
     this.config = { ...this.config, ...config };
@@ -56,7 +57,10 @@ class Spider extends EventEmitter {
     this.http.on('error', this.error.bind(this));
     this.http.on('completeAll', this.onCompleteAll.bind(this));
   }
-  public async start(urls: startUrl = [], config?: IHttp.HttpConfig) {
+  public async start(
+    urls: startUrl = [],
+    config?: IHttp.HttpConstructorConfig
+  ) {
     this.status = Status.Running;
     if (this.config.open && typeof this.config.open === 'function') {
       this.logger.info(`执行打开函数`);
@@ -64,7 +68,7 @@ class Spider extends EventEmitter {
     }
     this.push(urls, config);
   }
-  public test(urls: startUrl, config?: IHttp.HttpConfig) {
+  public test(urls: startUrl, config?: IHttp.HttpConstructorConfig) {
     this.mode = Mode.test;
     this.start(urls, config);
   }
@@ -135,37 +139,43 @@ class Spider extends EventEmitter {
     data: string | object;
     config: IHttp.HttpConfig;
   }): Promise<any> {
-    const { url, data, config } = params;
-    this.logger.info(`请求完成,等待处理,${url}`);
-    const rules = this.rules.filter((rule) => {
-      return rule.test(url);
-    });
-    // 是否从该文档提取url
-    let include = true;
-    rules.forEach(async (r: Rule) => {
-      try {
-        if (include) {
-          include = r.isInclude();
-        }
-        this.logger.info(`正在进行数据处理:${url}`);
-        await r.call(url, data, config, this);
-      } catch (error) {
-        this.logger.error(`数据处理异常,url:${url},error:`, error);
-        r.callError(url, error, config, this);
-      }
-    });
-    if (!include || typeof data !== 'string' || this.mode === Mode.test) {
-      return;
-    }
-    this.logger.info(`正在提取匹配url:${url}`);
-    const urls = this.rules.reduce((set: Set<string>, rule: Rule) => {
-      const cs = rule.match(url, data);
-      cs.forEach((u: string) => {
-        set.add(u);
+    this.handlingCount++;
+    try {
+      const { url, data, config } = params;
+      this.logger.info(`请求完成,等待处理,${url}`);
+      const rules = this.rules.filter((rule) => {
+        return rule.test(url);
       });
-      return set;
-    }, new Set<string>());
-    this.push(urls);
+      // 是否从该文档提取url
+      let include = true;
+      for (let r of rules) {
+        try {
+          if (include) {
+            include = r.isInclude();
+          }
+          this.logger.info(`正在进行数据处理:${url}`);
+          await r.call(url, data, config, this);
+        } catch (error) {
+          this.logger.error(`数据处理异常,url:${url},error:`, error);
+          r.callError(url, error, config, this);
+        }
+      }
+      if (!include || typeof data !== 'string' || this.mode === Mode.test) {
+        return;
+      }
+      this.logger.info(`正在提取匹配url:${url}`);
+      const urls = this.rules.reduce((set: Set<string>, rule: Rule) => {
+        const cs = rule.match(url, data);
+        cs.forEach((u: string) => {
+          set.add(u);
+        });
+        return set;
+      }, new Set<string>());
+      this.push(urls);
+    } finally {
+      this.handlingCount--;
+      this.onHandleComplete();
+    }
   }
   public error(params: {
     url: string;
@@ -199,8 +209,16 @@ class Spider extends EventEmitter {
       this.start(urls);
     });
   }
+  private onHandleComplete() {
+    if (this.status === Status.Complete) {
+      this.onCompleteAll();
+    }
+  }
   private onCompleteAll() {
     this.status = Status.Complete;
+    if (this.handlingCount > 0) {
+      return;
+    }
     this.logger.info(`任务全部完成`);
     if (!this.isPlan) {
       if (this.config.close && typeof this.config.close === 'function') {

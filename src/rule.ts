@@ -113,6 +113,9 @@ export class Rule {
 export function createRule(
   rule: ISpider.SpiderRuleConfig | ISpider.SpiderRuleConfig[]
 ) {
+  if (!Array.isArray(rule)) {
+    rule = [rule];
+  }
   return rule;
 }
 export default Rule;
