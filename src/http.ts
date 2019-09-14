@@ -1,3 +1,4 @@
+import { Rule } from './rule';
 import { EventEmitter } from 'events';
 import iconv from 'iconv-lite';
 import { Logger } from 'log4js';
@@ -10,7 +11,6 @@ interface IHttpTask {
   url: string;
   config: IHttp.HttpConfig;
 }
-
 export class Http extends EventEmitter {
   public static clone(http: Http): Http {
     return new Http(http.config, http.middlewares);
@@ -26,7 +26,7 @@ export class Http extends EventEmitter {
     overlist: new Set(),
     cacheMap: new Map(),
   };
-  private queue: IHttpTask[] = [];
+  private queue = new Map<Rule, IHttpTask[]>();
   constructor(
     config: IHttp.HttpConstructorConfig = {
       repeat: false,
@@ -65,7 +65,7 @@ export class Http extends EventEmitter {
     return result;
   }
   // 检测是否可以直接运行
-  public inspect(url?: string, config?: IHttp.HttpConfig): boolean {
+  public inspect(url?: string, config?: { rule: Rule }): boolean {
     // console.log(this.connect, this.maxConnect, this.queue.length)
     let max = this.maxConnect;
     let cur = this.connect;
@@ -74,8 +74,9 @@ export class Http extends EventEmitter {
       const key = config.rule.rule;
       const val = this.ruleConnect.get(key) || 0;
       max = Math.min(config.rule.config.maxCollect || max, max);
-      cur = Math.max(val, cur);
+      cur = val;
     }
+
     if (cur < max) {
       return true;
     }
@@ -92,10 +93,15 @@ export class Http extends EventEmitter {
     }
     this.logger.info(`任务加入队列:${url}`);
     const queue = this.queue;
+    let ruleQ = queue.get(config.rule);
+    if (!ruleQ) {
+      ruleQ = [];
+      queue.set(config.rule, ruleQ);
+    }
     if (priority) {
-      queue.unshift({ url, config });
+      ruleQ.unshift({ url, config });
     } else {
-      queue.push({ url, config });
+      ruleQ.push({ url, config });
     }
   }
   public addOverUrl(url: string) {
@@ -217,25 +223,36 @@ export class Http extends EventEmitter {
     if (val) {
       this.ruleConnect.set(config.rule.rule, val - 1);
     }
-
-    while (this.inspect()) {
-      const task = this.queue.shift();
-      if (task) {
-        // 检查规则如果目前的url规则内需要延迟，则下个时序再插入回队列，防止死循环
-        if (this.inspect(task.url, task.config)) {
+    for (let $rule of Array.from(this.queue.keys())) {
+      if (this.connect >= this.maxConnect) {
+        return;
+      }
+      const queue = this.queue.get($rule);
+      if (!queue) return;
+      while (this.inspect('', { rule: $rule })) {
+        const task = queue.shift();
+        if (task) {
           this.push(task.url, task.config);
         } else {
-          setTimeout(() => {
-            this.push(task.url, task.config);
-          }, 0);
+          break;
         }
-      } else {
+      }
+    }
+
+    if (this.isIdle) {
+      this.emit('completeAll');
+    }
+  }
+  // 检测是否空闲
+  public isIdle() {
+    let len = 0;
+    for (let ht in this.queue.values()) {
+      len = ht.length;
+      if (len) {
         break;
       }
     }
-    if (this.connect === 0 && this.queue.length === 0) {
-      this.emit('completeAll');
-    }
+    return !!this.connect || !!len;
   }
 }
 export default Http;

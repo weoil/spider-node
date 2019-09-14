@@ -215,7 +215,13 @@ class Spider extends EventEmitter {
     }
   }
   private onCompleteAll() {
-    this.status = Status.Complete;
+    // 防止在pipeline中插入任务时检测不到http/queue里的任务，从而意外的结束任务
+    if (this.http.isIdle()) {
+      this.status = Status.Running;
+      return;
+    } else {
+      this.status = Status.Complete;
+    }
     if (this.handlingCount > 0) {
       return;
     }
