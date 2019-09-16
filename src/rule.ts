@@ -73,13 +73,14 @@ export class Rule {
     if (!this.parse) {
       return;
     }
+    config.meta = config.meta || {};
     try {
       let item = await this.parse.call(
         context,
         url,
         data,
         Cheerio.load(data),
-        config,
+        config as IRule.RuleHttpConfig,
         context
       );
       if (!this.pipelines.length) {

@@ -25,11 +25,13 @@ export class Http extends EventEmitter {
   public config: IHttp.HttpConstructorConfig = {
     overlist: new Set(),
     cacheMap: new Map(),
+    meta: {},
   };
   private queue = new Map<Rule, IHttpTask[]>();
   constructor(
     config: IHttp.HttpConstructorConfig = {
       repeat: false,
+      meta: {},
     },
     middlewares?: IHttp.DownloadMiddleware[]
   ) {

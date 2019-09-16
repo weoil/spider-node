@@ -51,11 +51,16 @@ export namespace IRule {
     [key: string]: any;
   }
   type RuleError = ISpider.ErrorMiddleware;
+  export interface RuleHttpConfig extends IHttp.HttpConfig {
+    meta: {
+      [key: string]: any;
+    };
+  }
   type RuleParse = (
     url: string,
     data: string | any,
     selector: CheerioSelector,
-    config: IHttp.HttpConfig,
+    config: RuleHttpConfig,
     spider: Spider
   ) => any;
   type RulePipeline = (item: any, spider: Spider) => any;
