@@ -10,6 +10,7 @@ describe('spider', function() {
     app.use(async (ctx, next) => {
       const url = ctx.URL;
       if (url.pathname === '/post' && ctx.method === 'POST') {
+        ctx.append('hello', 'world');
         ctx.body = {
           str: 'hello-post',
         };
@@ -25,6 +26,33 @@ describe('spider', function() {
   });
   after(() => {
     server.close();
+  });
+  it('检测response功能返回', function(done) {
+    this.timeout(1000);
+    const s = new spider({
+      name: 'name',
+      log: false,
+      rules: [
+        {
+          test: /\/post/,
+          async parse(url, data, $, config, spider) {
+            assert(config.response.headers.hello, 'world');
+            done();
+          },
+          error(url, error) {
+            done(error);
+          },
+        },
+      ],
+      errorMiddleware: [
+        async (url, error) => {
+          done(error);
+        },
+      ],
+    });
+    s.push('http://127.0.0.1:8881/post', {
+      method: 'POST',
+    });
   });
   it('网络请求,cheerio的数据处理,parse处理功能', function(done) {
     this.timeout(1000);

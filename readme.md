@@ -44,7 +44,7 @@ spider.start('https://www.baidu.com')
         url // url
         data // 数据
         selector // cheerio选择器
-        config // 该url的配置,可以取出meta
+        config // 该url的配置,可以取出meta response可以查看原始返回数据
         spider // 爬虫实例,可以调用push进行添加请求(可通过 spider.push(url,{meta:{}}))的方式传递信息
       },
       async pipeline(item){

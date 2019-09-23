@@ -25,11 +25,13 @@ export class Http extends EventEmitter {
   public config: IHttp.HttpConstructorConfig = {
     overlist: new Set(),
     cacheMap: new Map(),
+    meta: {},
   };
   private queue = new Map<Rule, IHttpTask[]>();
   constructor(
     config: IHttp.HttpConstructorConfig = {
       repeat: false,
+      meta: {},
     },
     middlewares?: IHttp.DownloadMiddleware[]
   ) {
@@ -61,6 +63,7 @@ export class Http extends EventEmitter {
     const result = await rp({
       url,
       ...tmp,
+      resolveWithFullResponse: true,
     });
     return result;
   }
@@ -129,14 +132,15 @@ export class Http extends EventEmitter {
         jump = true;
         throw new Error('middleware return false');
       }
-      let result = await this.request(url, {
+      let response = await this.request(url, {
         jar: false,
         encoding: null,
         ...$config,
       });
+      const result = response.body;
       const data: IHttp.Result = {
         url,
-        config: $config,
+        config: { ...$config, response: response },
         data: result,
       };
       if (!$config.encoding) {

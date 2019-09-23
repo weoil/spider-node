@@ -1,6 +1,6 @@
 import Rule from './../src/rule';
 import Spider from '../src/spider';
-import request from 'request';
+import request, { RequestResponse } from 'request';
 export namespace ISpider {
   type ErrorMiddleware = (
     url: string,
@@ -51,11 +51,16 @@ export namespace IRule {
     [key: string]: any;
   }
   type RuleError = ISpider.ErrorMiddleware;
+  export interface RuleHttpConfig extends IHttp.HttpResultConfig {
+    meta: {
+      [key: string]: any;
+    };
+  }
   type RuleParse = (
     url: string,
     data: string | any,
     selector: CheerioSelector,
-    config: IHttp.HttpConfig,
+    config: RuleHttpConfig,
     spider: Spider
   ) => any;
   type RulePipeline = (item: any, spider: Spider) => any;
@@ -85,10 +90,13 @@ export namespace IHttp {
     url: string;
     rootConfig: HttpConstructorConfig;
   }
+  export interface HttpResultConfig extends HttpConfig {
+    response: RequestResponse;
+  }
   export interface Result {
     url: string;
     data: any;
-    config: HttpConfig;
+    config: HttpResultConfig;
   }
   type DownloadMiddleware = (
     config: HttpMiddlewareConfig
