@@ -17,7 +17,7 @@ spider.start('https://www.baidu.com')
   name:'spider', // 名称
   log:true,// 是否打印日志
   http:{
-    maxConnect?: number // 最大连接 如果为1 则会等待上一个任务结束后再次发送任务
+    maxConnect?: number // 规则默认的最大连接 如果规则本身没有制定则会继承此设置(如果为1,则会等待上一个任务结束后再次发送任务)
     delay?: number // 每次请求后的等待时间
     repeat?: boolean // 是否允许重复，默认false不允许重复
     charset?:string // 编码方式 如果是html文本 将用于解析默认为: utf-8
@@ -34,10 +34,10 @@ spider.start('https://www.baidu.com')
         include:boolean, // 是否从url中按照规则匹配url (true)
         expire:180000, // 当去重开启时,规定去重的缓存存在时间,在该时间过后,将视为新url不再去重
         baseUrl:'', // 从文件自动匹配url时,将会默认根据父级url进行拼接,如果提供此值,将使用它
-        maxConnect?:number, // 最大连接数（受限于http中的最大连接数
-        delay?:number // 单个规则的等待时间
-        http:HttpConfig, // 单独配置网络配置,同上html
-        meta:{ // 可携带自定义信息
+        maxConnect?:number, // 最大连接数（如果没有设置则继承http中的最大连接数
+        delay?:number // 单个规则的等待时间（如果没有设置则继承http中的delay
+        http:HttpConfig, // 单独配置网络配置,同上
+        meta:{ // 可携带自定义信息 可在处理函数中修改
         }
       },
       async parse(url,data,selector,config,spider){

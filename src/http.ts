@@ -11,6 +11,11 @@ interface IHttpTask {
   url: string;
   config: IHttp.HttpConfig;
 }
+interface IRuleParams {
+  rule: Rule;
+  queue: IHttpTask[];
+  connect: number;
+}
 export class Http extends EventEmitter {
   public static clone(http: Http): Http {
     return new Http(http.config, http.middlewares);
@@ -21,13 +26,14 @@ export class Http extends EventEmitter {
   public connect: number = 0;
   public middlewares: IHttp.DownloadMiddleware[] = [NoRepeatMid];
   public timer: NodeJS.Timeout | null = null;
-  public ruleConnect: Map<RegExp | string, number> = new Map();
+  public pool: Map<RegExp, IRuleParams> = new Map<RegExp, IRuleParams>();
+  // public ruleConnect: Map<RegExp | string, number> = new Map();
   public config: IHttp.HttpConstructorConfig = {
     overlist: new Set(),
     cacheMap: new Map(),
     meta: {},
   };
-  private queue = new Map<Rule, IHttpTask[]>();
+  // private queue = new Map<Rule, IHttpTask[]>();
   constructor(
     config: IHttp.HttpConstructorConfig = {
       repeat: false,
@@ -68,43 +74,37 @@ export class Http extends EventEmitter {
     return result;
   }
   // 检测是否可以直接运行
-  public inspect(url?: string, config?: { rule: Rule }): boolean {
-    // console.log(this.connect, this.maxConnect, this.queue.length)
-    let max = this.maxConnect;
-    let cur = this.connect;
-    if (config && config.rule) {
-      // rule键：rule类：正则
-      const key = config.rule.rule;
-      const val = this.ruleConnect.get(key) || 0;
-      max = Math.min(config.rule.config.maxCollect || max, max);
-      cur = val;
-    }
-
-    if (cur < max) {
-      return true;
-    }
-    return false;
+  public inspect(url: string, config: { rule: Rule }): boolean {
+    let ruleParam = this.pool.get(config.rule.rule) as IRuleParams;
+    let cur = ruleParam.connect;
+    let max = config.rule.config.maxCollect || this.maxConnect;
+    return cur < max;
   }
   public async push(
     url: string,
     config: IHttp.HttpConfig,
     priority: boolean = false
   ): Promise<any> {
+    let ruleParam = this.pool.get(config.rule.rule);
+    if (!ruleParam) {
+      ruleParam = {
+        rule: config.rule,
+        connect: 0,
+        queue: [],
+      };
+      this.pool.set(config.rule.rule, ruleParam);
+    }
     if (this.inspect(url, config)) {
       this.run(url, config);
       return;
     }
     this.logger.info(`任务加入队列:${url}`);
-    const queue = this.queue;
-    let ruleQ = queue.get(config.rule);
-    if (!ruleQ) {
-      ruleQ = [];
-      queue.set(config.rule, ruleQ);
-    }
+
+    const queue = ruleParam.queue;
     if (priority) {
-      ruleQ.unshift({ url, config });
+      queue.unshift({ url, config });
     } else {
-      ruleQ.push({ url, config });
+      queue.push({ url, config });
     }
   }
   public addOverUrl(url: string) {
@@ -116,9 +116,9 @@ export class Http extends EventEmitter {
   public async run(url: string, config: IHttp.HttpConfig): Promise<any> {
     const rule = config.rule;
     this.connect++;
-    this.ruleConnect.set(rule.rule, (this.ruleConnect.get(rule.rule) || 0) + 1);
+    (this.pool.get(rule.rule) as IRuleParams).connect += 1;
     this.logger.info(`正在进行请求,目前请求数量:${this.connect}:url:${url}`);
-    let jump = false;
+    let hasErr = false;
     try {
       const $config: IHttp.HttpConfig | false = await this.callMiddleware({
         url,
@@ -129,7 +129,7 @@ export class Http extends EventEmitter {
 
       if ($config === false) {
         this.logger.info(`网络处理中间件阻止继续执:${url}`);
-        jump = true;
+        hasErr = true;
         throw new Error('middleware return false');
       }
       let response = await this.request(url, {
@@ -166,14 +166,15 @@ export class Http extends EventEmitter {
       }
       this.emit('error', { url, config, error });
     } finally {
+      this.connect--;
       const delay = rule.config.delay || this.delay;
-      if (delay && !jump) {
+      if (delay && !hasErr) {
         setTimeout(() => {
           this.logger.info(`网络请求等待延迟:${url},${delay}`);
-          this.complete(config);
+          this.complete(url, config);
         }, delay);
       } else {
-        this.complete(config);
+        this.complete(url, config);
       }
     }
   }
@@ -220,28 +221,33 @@ export class Http extends EventEmitter {
     }
     return iconv.decode(buffer, charset);
   }
-  private complete(config: IHttp.HttpConfig): void {
-    this.connect--;
+  private complete(url: string, config: IHttp.HttpConfig): void {
     // 对应规则的连接数 --
-    const val = this.ruleConnect.get(config.rule.rule);
-    if (val) {
-      this.ruleConnect.set(config.rule.rule, val - 1);
-    }
-    for (let $rule of Array.from(this.queue.keys())) {
-      if (this.connect >= this.maxConnect) {
-        return;
-      }
-      const queue = this.queue.get($rule);
-      if (!queue) return;
-      while (this.inspect('', { rule: $rule })) {
-        const task = queue.shift();
-        if (task) {
-          this.push(task.url, task.config);
-        } else {
-          break;
-        }
+    let ruleParam = this.pool.get(config.rule.rule) as IRuleParams;
+    ruleParam.connect -= 1;
+    while (this.inspect(url, config)) {
+      const task = ruleParam.queue.shift();
+      if (task) {
+        this.push(task.url, task.config);
+      } else {
+        break;
       }
     }
+    // for (let $rule of Array.from(this.queue.keys())) {
+    //   if (this.connect >= this.maxConnect) {
+    //     return;
+    //   }
+    //   const queue = this.queue.get($rule);
+    //   if (!queue) return;
+    //   while (this.inspect('', { rule: $rule })) {
+    //     const task = queue.shift();
+    //     if (task) {
+    //       this.push(task.url, task.config);
+    //     } else {
+    //       break;
+    //     }
+    //   }
+    // }
 
     if (this.isIdle) {
       this.emit('completeAll');
@@ -249,14 +255,14 @@ export class Http extends EventEmitter {
   }
   // 检测是否空闲
   public isIdle() {
-    let len = 0;
-    for (let ht in this.queue.values()) {
-      len = ht.length;
+    for (let rp in this.pool.values()) {
+      const tmp: any = rp;
+      let len =
+        (tmp as IRuleParams).queue.length || (tmp as IRuleParams).connect;
       if (len) {
-        break;
+        return false;
       }
     }
-    return !!this.connect || !!len;
   }
 }
 export default Http;

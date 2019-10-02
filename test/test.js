@@ -269,6 +269,7 @@ describe('spider', function() {
       log: false,
       http: {
         timeout: 1000,
+        maxConnect: 1,
       },
       rules: [
         {
