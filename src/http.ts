@@ -249,20 +249,19 @@ export class Http extends EventEmitter {
     //   }
     // }
 
-    if (this.isIdle) {
+    if (this.isIdle()) {
       this.emit('completeAll');
     }
   }
   // 检测是否空闲
   public isIdle() {
-    for (let rp in this.pool.values()) {
-      const tmp: any = rp;
-      let len =
-        (tmp as IRuleParams).queue.length || (tmp as IRuleParams).connect;
+    for (let rp of Array.from(this.pool.values())) {
+      let len = rp.queue.length || rp.connect;
       if (len) {
         return false;
       }
     }
+    return true;
   }
 }
 export default Http;

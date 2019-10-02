@@ -174,7 +174,7 @@ class Spider extends EventEmitter {
       this.push(urls);
     } finally {
       this.handlingCount--;
-      this.onHandleComplete();
+      this.onCompleteAll();
     }
   }
   public error(params: {
@@ -209,22 +209,14 @@ class Spider extends EventEmitter {
       this.start(urls);
     });
   }
-  private onHandleComplete() {
-    if (this.status === Status.Complete) {
-      this.onCompleteAll();
-    }
-  }
+
   private onCompleteAll() {
     // 防止在pipeline中插入任务时检测不到http/queue里的任务，从而意外的结束任务
-    if (this.http.isIdle()) {
-      this.status = Status.Running;
-      return;
-    } else {
-      this.status = Status.Complete;
-    }
-    if (this.handlingCount > 0) {
+    if (!this.handlingCount || !this.http.isIdle()) {
       return;
     }
+    this.status = Status.Complete;
+    console.log(`all over`);
     this.logger.info(`任务全部完成`);
     if (!this.isPlan) {
       if (this.config.close && typeof this.config.close === 'function') {
