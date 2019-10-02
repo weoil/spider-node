@@ -216,7 +216,6 @@ class Spider extends EventEmitter {
       return;
     }
     this.status = Status.Complete;
-    console.log(`all over`);
     this.logger.info(`任务全部完成`);
     if (!this.isPlan) {
       if (this.config.close && typeof this.config.close === 'function') {
