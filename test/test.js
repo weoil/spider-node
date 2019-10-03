@@ -242,18 +242,28 @@ describe('spider', function() {
           },
           async parse(url, data, $, config, spider) {
             count++;
-            if (count === 3) {
-              spider.cancel();
-              done();
-            }
           },
           error(url, error) {
             done(error);
           },
         },
       ],
+      downloadMiddleware: [
+        (c) => {
+          if (count >= 3) {
+            count++;
+            return false;
+          }
+          return c;
+        },
+      ],
       errorMiddleware: [
         async (url, error) => {
+          if (count === 4) {
+            s.cancel();
+            done();
+            return;
+          }
           done(error);
         },
       ],
