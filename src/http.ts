@@ -169,8 +169,8 @@ export class Http extends EventEmitter {
       this.connect--;
       const delay = rule.config.delay || this.delay;
       if (delay && !hasErr) {
+        this.logger.info(`网络请求等待延迟:${url},${delay}`);
         setTimeout(() => {
-          this.logger.info(`网络请求等待延迟:${url},${delay}`);
           this.complete(url, config);
         }, delay);
       } else {
@@ -233,6 +233,12 @@ export class Http extends EventEmitter {
         break;
       }
     }
+    this.logger.info(
+      `当前规则总任务数：${ruleParam.queue.length},当前运行总数量:${this.connect}`
+    );
+    if (this.isIdle()) {
+      this.emit('completeAll');
+    }
     // for (let $rule of Array.from(this.queue.keys())) {
     //   if (this.connect >= this.maxConnect) {
     //     return;
@@ -248,10 +254,6 @@ export class Http extends EventEmitter {
     //     }
     //   }
     // }
-
-    if (this.isIdle()) {
-      this.emit('completeAll');
-    }
   }
   // 检测是否空闲
   public isIdle() {
