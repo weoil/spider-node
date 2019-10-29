@@ -1,7 +1,7 @@
 const assert = require('assert');
 const koa = require('koa');
 const koaStatic = require('koa-static');
-const spider = require('../dist/index.js').default;
+const spider = require('../dist/src/index.js').default;
 const http = require('http');
 let server;
 describe('spider', function() {
@@ -242,6 +242,9 @@ describe('spider', function() {
           },
           async parse(url, data, $, config, spider) {
             count++;
+            if (count === 4) {
+              throw new Error('fuck');
+            }
           },
           error(url, error) {
             done(error);

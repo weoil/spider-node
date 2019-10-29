@@ -5,6 +5,10 @@ import Http from './http';
 import Rule from './rule';
 import { createLogger } from './utils/logger';
 import { ISpider, IRule, IHttp } from '../types';
+import { RedisClient } from 'redis';
+import redis from 'redis';
+import bb from 'bluebird';
+
 enum Mode {
   development,
   production,
@@ -29,15 +33,26 @@ class Spider extends EventEmitter {
   public mode: Mode = Mode.production;
   public errorMiddlewares: ISpider.ErrorMiddleware[] = [];
   public isPlan: boolean = false;
+  public redis?: RedisClient;
   private handlingCount: number = 0;
   constructor(config: ISpider.Config, http?: Http) {
     super();
     this.config = { ...this.config, ...config };
+    if (this.config.redis) {
+      const r = redis.createClient(this.config.redis);
+      this.redis = bb.promisifyAll(r);
+    }
     if (http) {
       this.http = Http.clone(http);
     } else {
       this.http = new Http(
-        { ...config.http, name: config.name, log: config.log },
+        {
+          ...config.http,
+          name: config.name,
+          log: config.log,
+          redis: this.redis,
+          spider: this,
+        },
         config.downloadMiddleware
       );
     }
@@ -91,6 +106,8 @@ class Spider extends EventEmitter {
     if (this.http.connect === 0 && arr.length === 0) {
       this.status = Status.Complete;
       return;
+    } else {
+      this.status = Status.Running;
     }
     arr.forEach((url: string) => {
       if (!url || typeof url !== 'string') {
@@ -210,19 +227,17 @@ class Spider extends EventEmitter {
     });
   }
 
-  private onCompleteAll() {
+  private async onCompleteAll() {
     // 防止在pipeline中插入任务时检测不到http/queue里的任务，从而意外的结束任务
     if (this.handlingCount || !this.http.isIdle()) {
-      this.logger.error(`未能终止,Handle运行数量：${this.handlingCount}`);
       return;
     }
     this.status = Status.Complete;
     this.logger.info(`任务全部完成`);
-    if (!this.isPlan) {
-      if (this.config.close && typeof this.config.close === 'function') {
-        this.logger.info(`执行关闭函数`);
-        this.config.close.call(this, this);
-      }
+    if (!this.isPlan && !this.config.keep) {
+      this.cancel();
+    } else if (this.config.keep) {
+      setTimeout(() => {}, 86400000);
     }
   }
   public getRule(url: string) {
@@ -249,9 +264,16 @@ class Spider extends EventEmitter {
       this.rules.push(r);
     });
   }
-  public cancel() {
+  public async cancel() {
+    if (this.config.close && typeof this.config.close === 'function') {
+      this.logger.info(`执行关闭函数`);
+      await this.config.close.call(this, this);
+    }
     if (this.cornJob) {
       this.cornJob.cancel(false);
+    }
+    if (this.redis) {
+      this.redis.quit();
     }
   }
 }

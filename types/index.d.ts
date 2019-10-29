@@ -1,6 +1,7 @@
 import Rule from './../src/rule';
 import Spider from '../src/spider';
 import request, { RequestResponse } from 'request';
+import { ClientOpts, RedisClient } from 'redis';
 export namespace ISpider {
   type ErrorMiddleware = (
     url: string,
@@ -37,6 +38,8 @@ export namespace ISpider {
     downloadMiddleware?: [IHttp.DownloadMiddleware];
     errorMiddleware?: [ErrorMiddleware];
     log?: boolean;
+    redis?: ClientOpts;
+    keep?: boolean; // 是否保持运行
   }
 }
 
@@ -71,6 +74,7 @@ export namespace IHttp {
     rule: Rule;
   }
   export interface HttpConstructorConfig extends request.CoreOptions {
+    spider?: Spider;
     name?: string;
     url?: string;
     retry?: number;
@@ -82,6 +86,7 @@ export namespace IHttp {
     overlist?: Set<string>;
     [key: string]: any;
     repeat?: boolean;
+    redis?: RedisClient;
   }
   export interface HttpConfig extends HttpConstructorConfig {
     rule: Rule;
