@@ -17,10 +17,10 @@ export default async function noRepeat(
         ? rootConfig.spider.config.name || 'spider-node'
         : 'spider-node'
     }-${rule.name || rule.rule}`;
-    console.log(mKey);
+    // console.log(mKey);
 
     const date = await redis.hgetAsync(`${mKey}`, url);
-    console.log(`date:${date}`);
+    // console.log(`date:${date}`);
 
     if (date === '1') {
       // 不超时

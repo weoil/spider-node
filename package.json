@@ -1,7 +1,7 @@
 {
   "name": "spider-node",
   "private": false,
-  "version": "1.0.81",
+  "version": "1.0.9",
   "description": "爬虫工具,根据传入的配置和规则爬取数据",
   "workspaces": "./dist/src",
   "module": "./dist/src/index.js",
