@@ -4,11 +4,17 @@ Log.configure({
     console: {
       type: 'console',
     },
+    file: {
+      type: 'multiFile',
+      base: 'logs/',
+      property: 'logName',
+      extension: '.log',
+    },
   },
   categories: {
     default: {
-      appenders: ['console'],
-      level: 'info',
+      appenders: ['console', 'file'],
+      level: 'debug',
     },
   },
 });

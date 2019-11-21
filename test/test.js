@@ -1,9 +1,10 @@
 const assert = require('assert');
 const koa = require('koa');
 const koaStatic = require('koa-static');
-const spider = require('../dist/src/index.js').default;
+const { createLogger, default: spider } = require('../dist/index.js');
 const http = require('http');
 let server;
+let testLogger = createLogger('test');
 describe('spider', function() {
   before(function(done) {
     const app = new koa();
@@ -161,7 +162,7 @@ describe('spider', function() {
       ],
 
       close() {
-        console.log('close');
+        // console.log('close');
       },
     });
     s.start('http://127.0.0.1:8881/links.html');
@@ -246,6 +247,13 @@ describe('spider', function() {
               throw new Error('fuck');
             }
           },
+          pipeline() {
+            return new Promise((r) => {
+              setTimeout(() => {
+                r();
+              }, 100);
+            });
+          },
           error(url, error) {
             done(error);
           },
@@ -271,7 +279,7 @@ describe('spider', function() {
         },
       ],
     });
-    s.plan('*/1 * * * * *', 'http://127.0.0.1:8881/cn.html', true);
+    s.plan('*/1 * * * * *', () => 'http://127.0.0.1:8881/cn.html', true);
   });
   it('指定rule延迟', function(done) {
     this.timeout(3000);

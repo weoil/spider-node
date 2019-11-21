@@ -42,7 +42,7 @@ export class Http extends EventEmitter {
     middlewares?: IHttp.DownloadMiddleware[]
   ) {
     super();
-    this.logger = createLogger(config.name || 'spider', config.log);
+    this.logger = createLogger('spider-node', config.log);
     const cfg = (this.config = { ...this.config, ...config });
     if (cfg.maxConnect) {
       this.maxConnect = cfg.maxConnect;
@@ -98,7 +98,7 @@ export class Http extends EventEmitter {
       this.run(url, config);
       return;
     }
-    this.logger.info(`任务加入队列:${url}`);
+    this.logger.debug(`任务加入队列:${url}`);
 
     const queue = ruleParam.queue;
     if (priority) {
@@ -117,7 +117,7 @@ export class Http extends EventEmitter {
     const rule = config.rule;
     this.connect++;
     (this.pool.get(rule.rule) as IRuleParams).connect += 1;
-    this.logger.info(`正在进行请求,目前请求数量:${this.connect}:url:${url}`);
+    this.logger.debug(`正在进行请求,目前请求数量:${this.connect}:url:${url}`);
     let hasErr = false;
     try {
       const $config: IHttp.HttpConfig | false = await this.callMiddleware({
@@ -128,7 +128,7 @@ export class Http extends EventEmitter {
       });
 
       if ($config === false) {
-        this.logger.info(`网络处理中间件阻止继续执:${url}`);
+        this.logger.debug(`网络处理中间件阻止继续执:${url}`);
         hasErr = true;
         throw new Error('middleware return false');
       }
@@ -156,7 +156,7 @@ export class Http extends EventEmitter {
         // try
       }
 
-      this.logger.info(`网络请求完成:${url}`);
+      this.logger.debug(`网络请求完成:${url}`);
       this.emit('complete', data);
     } catch (error) {
       if (error.message !== 'middleware return false' && config.retry) {
@@ -169,7 +169,7 @@ export class Http extends EventEmitter {
       this.connect--;
       const delay = rule.config.delay || this.delay;
       if (delay && !hasErr) {
-        this.logger.info(`网络请求等待延迟:${url},${delay}`);
+        this.logger.debug(`网络请求等待延迟:${url},${delay}`);
         setTimeout(() => {
           this.complete(url, config);
         }, delay);
@@ -233,7 +233,7 @@ export class Http extends EventEmitter {
         break;
       }
     }
-    this.logger.info(
+    this.logger.debug(
       `当前规则总任务数：${ruleParam.queue.length},当前运行总数量:${this.connect}`
     );
     if (this.isIdle()) {

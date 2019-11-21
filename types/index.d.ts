@@ -39,7 +39,6 @@ export namespace ISpider {
     errorMiddleware?: [ErrorMiddleware];
     log?: boolean;
     redis?: ClientOpts;
-    keep?: boolean; // 是否保持运行
   }
 }
 

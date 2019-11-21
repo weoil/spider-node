@@ -50,7 +50,7 @@ class Spider extends events_1.EventEmitter {
                 spider: this,
             }, config.downloadMiddleware);
         }
-        this.logger = logger_1.createLogger(config.name || 'spider', config.log);
+        this.logger = logger_1.createLogger('spider-node', config.log);
         this.init(this.config);
     }
     static new(config) {
@@ -70,7 +70,7 @@ class Spider extends events_1.EventEmitter {
     async start(urls = [], config) {
         this.status = Status.Running;
         if (this.config.open && typeof this.config.open === 'function') {
-            this.logger.info(`执行打开函数`);
+            this.logger.debug(`执行打开函数`);
             await this.config.open.call(this, this);
         }
         this.push(urls, config);
@@ -104,7 +104,7 @@ class Spider extends events_1.EventEmitter {
             if (!url || typeof url !== 'string') {
                 return;
             }
-            this.logger.info(`任务推送:${url}`);
+            this.logger.debug(`任务推送:${url}`);
             const rule = this.getRule(url);
             const ruleHttp = rule.config.http || {};
             this.http.push(url, { ...ruleHttp, rule: rule, ...config }, priority);
@@ -134,7 +134,7 @@ class Spider extends events_1.EventEmitter {
         this.handlingCount++;
         try {
             const { url, data, config } = params;
-            this.logger.info(`请求完成,等待处理,${url}`);
+            this.logger.debug(`请求完成,等待处理,${url}`);
             const rules = this.rules.filter((rule) => {
                 return rule.test(url);
             });
@@ -145,7 +145,7 @@ class Spider extends events_1.EventEmitter {
                     if (include) {
                         include = r.isInclude();
                     }
-                    this.logger.info(`正在进行数据处理:${url}`);
+                    this.logger.debug(`正在进行数据处理:${url}`);
                     await r.call(url, data, config, this);
                 }
                 catch (error) {
@@ -156,7 +156,7 @@ class Spider extends events_1.EventEmitter {
             if (!include || typeof data !== 'string' || this.mode === Mode.test) {
                 return;
             }
-            this.logger.info(`正在提取匹配url:${url}`);
+            this.logger.debug(`正在提取匹配url:${url}`);
             const urls = this.rules.reduce((set, rule) => {
                 const cs = rule.match(url, data);
                 cs.forEach((u) => {
@@ -168,7 +168,9 @@ class Spider extends events_1.EventEmitter {
         }
         finally {
             this.handlingCount--;
-            this.onCompleteAll();
+            if (this.handlingCount <= 0) {
+                this.onCompleteAll();
+            }
         }
     }
     error(params) {
@@ -189,6 +191,7 @@ class Spider extends events_1.EventEmitter {
         };
         this.cornJob = node_schedule_1.default.scheduleJob($config, () => {
             if (this.status === Status.Running) {
+                this.logger.debug(`定时任务因任务尚未结束被搁浅`);
                 return;
             }
             this.start(urls);
@@ -200,12 +203,10 @@ class Spider extends events_1.EventEmitter {
             return;
         }
         this.status = Status.Complete;
-        this.logger.info(`任务全部完成`);
-        if (!this.isPlan && !this.config.keep) {
+        this.logger.debug(`任务全部完成`);
+        if (!this.isPlan) {
+            this.logger.debug(`没有定时任务,程序退出`);
             this.cancel();
-        }
-        else if (this.config.keep) {
-            setTimeout(() => { }, 86400000);
         }
     }
     getRule(url) {
@@ -225,7 +226,7 @@ class Spider extends events_1.EventEmitter {
     }
     async cancel() {
         if (this.config.close && typeof this.config.close === 'function') {
-            this.logger.info(`执行关闭函数`);
+            this.logger.debug(`执行关闭函数`);
             await this.config.close.call(this, this);
         }
         if (this.cornJob) {
