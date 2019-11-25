@@ -211,7 +211,7 @@ class Spider extends EventEmitter {
     cron: string,
     urls: startUrl,
     immediate: boolean = true,
-    config: any = { tz: 'Asia/Shanghai' }
+    config: any = {}
   ): void {
     this.isPlan = true;
     if (immediate) {
