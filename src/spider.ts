@@ -56,7 +56,7 @@ class Spider extends EventEmitter {
         config.downloadMiddleware
       );
     }
-    this.logger = createLogger('spider-node', config.log);
+    this.logger = createLogger(`${config.name}-spider-node`, config.log);
     this.init(this.config);
   }
   private init(config: ISpider.Config) {
@@ -76,7 +76,6 @@ class Spider extends EventEmitter {
     urls: startUrl = [],
     config?: IHttp.HttpConstructorConfig
   ) {
-    this.status = Status.Running;
     if (this.config.open && typeof this.config.open === 'function') {
       this.logger.debug(`执行打开函数`);
       await this.config.open.call(this, this);
@@ -102,12 +101,6 @@ class Spider extends EventEmitter {
       arr = arr.concat(Array.from(urls));
     } else {
       arr.push(urls);
-    }
-    if (this.http.connect === 0 && arr.length === 0) {
-      this.status = Status.Complete;
-      return;
-    } else {
-      this.status = Status.Running;
     }
     arr.forEach((url: string) => {
       if (!url || typeof url !== 'string') {
@@ -222,20 +215,25 @@ class Spider extends EventEmitter {
       ...config,
     };
     this.cornJob = Schedule.scheduleJob($config, () => {
-      if (this.status === Status.Running) {
-        this.logger.debug(`定时任务因任务尚未结束被搁浅`);
+      if (this.getStatus()) {
+        this.logger.debug(
+          `定时任务因任务尚未结束被搁浅,函数执行:${
+            this.handlingCount
+          },http运行状态:${this.http.isIdle()}`
+        );
         return;
       }
       this.start(urls);
     });
   }
-
+  public getStatus() {
+    return Boolean(this.handlingCount || !this.http.isIdle());
+  }
   private async onCompleteAll() {
     // 防止在pipeline中插入任务时检测不到http/queue里的任务，从而意外的结束任务
-    if (this.handlingCount || !this.http.isIdle()) {
+    if (this.getStatus()) {
       return;
     }
-    this.status = Status.Complete;
     this.logger.debug(`任务全部完成`);
     if (!this.isPlan) {
       this.logger.debug(`没有定时任务,程序退出`);

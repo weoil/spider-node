@@ -50,7 +50,7 @@ class Spider extends events_1.EventEmitter {
                 spider: this,
             }, config.downloadMiddleware);
         }
-        this.logger = logger_1.createLogger('spider-node', config.log);
+        this.logger = logger_1.createLogger(`${config.name}-spider-node`, config.log);
         this.init(this.config);
     }
     static new(config) {
@@ -68,7 +68,6 @@ class Spider extends events_1.EventEmitter {
         this.http.on('completeAll', this.onCompleteAll.bind(this));
     }
     async start(urls = [], config) {
-        this.status = Status.Running;
         if (this.config.open && typeof this.config.open === 'function') {
             this.logger.debug(`执行打开函数`);
             await this.config.open.call(this, this);
@@ -92,13 +91,6 @@ class Spider extends events_1.EventEmitter {
         }
         else {
             arr.push(urls);
-        }
-        if (this.http.connect === 0 && arr.length === 0) {
-            this.status = Status.Complete;
-            return;
-        }
-        else {
-            this.status = Status.Running;
         }
         arr.forEach((url) => {
             if (!url || typeof url !== 'string') {
@@ -180,7 +172,7 @@ class Spider extends events_1.EventEmitter {
         });
     }
     // corntab 语法定时任务 -> 秒 分 时 日 月 周几
-    plan(cron, urls, immediate = true, config = { tz: 'Asia/Shanghai' }) {
+    plan(cron, urls, immediate = true, config = {}) {
         this.isPlan = true;
         if (immediate) {
             this.start(urls);
@@ -190,19 +182,21 @@ class Spider extends events_1.EventEmitter {
             ...config,
         };
         this.cornJob = node_schedule_1.default.scheduleJob($config, () => {
-            if (this.status === Status.Running) {
-                this.logger.debug(`定时任务因任务尚未结束被搁浅`);
+            if (this.getStatus()) {
+                this.logger.debug(`定时任务因任务尚未结束被搁浅,函数执行:${this.handlingCount},http运行状态:${this.http.isIdle()}`);
                 return;
             }
             this.start(urls);
         });
     }
+    getStatus() {
+        return Boolean(this.handlingCount || !this.http.isIdle());
+    }
     async onCompleteAll() {
         // 防止在pipeline中插入任务时检测不到http/queue里的任务，从而意外的结束任务
-        if (this.handlingCount || !this.http.isIdle()) {
+        if (this.getStatus()) {
             return;
         }
-        this.status = Status.Complete;
         this.logger.debug(`任务全部完成`);
         if (!this.isPlan) {
             this.logger.debug(`没有定时任务,程序退出`);

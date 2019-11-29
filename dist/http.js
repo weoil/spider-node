@@ -27,7 +27,7 @@ class Http extends events_1.EventEmitter {
             cacheMap: new Map(),
             meta: {},
         };
-        this.logger = logger_1.createLogger('spider-node', config.log);
+        this.logger = logger_1.createLogger(`${config.name}-http`, config.log);
         const cfg = (this.config = { ...this.config, ...config });
         if (cfg.maxConnect) {
             this.maxConnect = cfg.maxConnect;

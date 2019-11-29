@@ -42,7 +42,7 @@ export class Http extends EventEmitter {
     middlewares?: IHttp.DownloadMiddleware[]
   ) {
     super();
-    this.logger = createLogger('spider-node', config.log);
+    this.logger = createLogger(`${config.name}-http`, config.log);
     const cfg = (this.config = { ...this.config, ...config });
     if (cfg.maxConnect) {
       this.maxConnect = cfg.maxConnect;
