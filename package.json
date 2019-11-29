@@ -1,7 +1,7 @@
 {
   "name": "spider-node",
   "private": false,
-  "version": "1.1.0",
+  "version": "1.1.201",
   "description": "爬虫工具,根据传入的配置和规则爬取数据",
   "workspaces": "./dist/src",
   "module": "./dist/index.js",
@@ -10,7 +10,6 @@
     "dev": "tsc-watch --onSuccess \"node dist/test/spider.js\"",
     "build": "tsc --build",
     "test": "yarn build && mocha",
-    "publish": "yarn test && yarn publish",
     "fix": "eslint --fix ."
   },
   "license": "ISC",
