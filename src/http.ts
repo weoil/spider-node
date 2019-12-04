@@ -3,7 +3,6 @@ import { EventEmitter } from 'events';
 import iconv from 'iconv-lite';
 import { Logger } from 'log4js';
 import rp from 'request-promise';
-import NoRepeatMid from './middleware/repeat';
 import { createLogger } from './utils/logger';
 import { ISpider, IRule, IHttp } from '../types';
 
@@ -24,7 +23,7 @@ export class Http extends EventEmitter {
   public delay: number = 0;
   public maxConnect: number = Infinity;
   public connect: number = 0;
-  public middlewares: IHttp.DownloadMiddleware[] = [NoRepeatMid];
+  public middlewares: IHttp.DownloadMiddleware[] = [];
   public timer: NodeJS.Timeout | null = null;
   public pool: Map<RegExp, IRuleParams> = new Map<RegExp, IRuleParams>();
   // public ruleConnect: Map<RegExp | string, number> = new Map();

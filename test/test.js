@@ -230,7 +230,7 @@ describe('spider', function() {
     s.start('http://127.0.0.1:8881/cn.html');
   });
   it('定时任务', function(done) {
-    this.timeout(3000);
+    this.timeout(4000);
     let count = 0;
     const s = new spider({
       name: 'name',
@@ -261,6 +261,7 @@ describe('spider', function() {
       ],
       downloadMiddleware: [
         (c) => {
+          // console.log(count);
           if (count >= 3) {
             count++;
             return false;

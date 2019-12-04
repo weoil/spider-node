@@ -35,8 +35,8 @@ export namespace ISpider {
     http?: IHttp.HttpConstructorConfig;
     open?: (spider: Spider) => Promise<any>;
     close?: (spider: Spider) => Promise<any>;
-    downloadMiddleware?: [IHttp.DownloadMiddleware];
-    errorMiddleware?: [ErrorMiddleware];
+    downloadMiddleware?: IHttp.DownloadMiddleware[];
+    errorMiddleware?: ErrorMiddleware[];
     log?: boolean;
     redis?: ClientOpts;
   }

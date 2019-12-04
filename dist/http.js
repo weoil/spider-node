@@ -6,7 +6,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const events_1 = require("events");
 const iconv_lite_1 = __importDefault(require("iconv-lite"));
 const request_promise_1 = __importDefault(require("request-promise"));
-const repeat_1 = __importDefault(require("./middleware/repeat"));
 const logger_1 = require("./utils/logger");
 class Http extends events_1.EventEmitter {
     // private queue = new Map<Rule, IHttpTask[]>();
@@ -18,7 +17,7 @@ class Http extends events_1.EventEmitter {
         this.delay = 0;
         this.maxConnect = Infinity;
         this.connect = 0;
-        this.middlewares = [repeat_1.default];
+        this.middlewares = [];
         this.timer = null;
         this.pool = new Map();
         // public ruleConnect: Map<RegExp | string, number> = new Map();

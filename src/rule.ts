@@ -94,6 +94,7 @@ export class Rule {
       }
     } catch (err) {
       this.callError(url, err, config, context);
+      throw err;
     }
   }
   public callError(

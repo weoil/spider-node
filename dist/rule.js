@@ -81,6 +81,7 @@ class Rule {
         }
         catch (err) {
             this.callError(url, err, config, context);
+            throw err;
         }
     }
     callError(url, error, config, context) {

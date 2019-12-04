@@ -2,7 +2,7 @@ import { IHttp } from '../../types';
 interface cacheMapImp {
   date: number;
 }
-export default async function noRepeat(
+export async function Deduplication(
   config: IHttp.HttpMiddlewareConfig
 ): Promise<IHttp.HttpMiddlewareConfig | false> {
   if (config.repeat) {
@@ -64,3 +64,5 @@ export default async function noRepeat(
   }
   return config;
 }
+
+export default Deduplication;

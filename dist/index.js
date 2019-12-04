@@ -8,6 +8,7 @@ __export(require("./http"));
 __export(require("./spider"));
 __export(require("./utils"));
 __export(require("./rule"));
+__export(require("./middleware/Deduplication"));
 var logger_1 = require("./utils/logger");
 exports.createLogger = logger_1.createLogger;
 var spider_1 = require("./spider");
