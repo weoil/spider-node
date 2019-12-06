@@ -1,7 +1,11 @@
 const assert = require('assert');
 const koa = require('koa');
 const koaStatic = require('koa-static');
-const { createLogger, default: spider } = require('../dist/index.js');
+const {
+  createLogger,
+  default: spider,
+  Deduplication,
+} = require('../dist/index.js');
 const http = require('http');
 let server;
 let testLogger = createLogger('test');
@@ -350,5 +354,72 @@ describe('spider', function() {
       'http://127.0.0.1:8881/spider-a.html',
       'http://127.0.0.1:8881/spider-a.html',
     ]);
+  });
+  it('测试去重', function(done) {
+    let count = 0;
+    const s = new spider({
+      name: 'name',
+      log: false,
+      rules: [
+        {
+          test: /a\.html/,
+          async parse(url, data, $, config, spider) {
+            if (count >= 1) {
+              done('repeat!');
+              s.close();
+            }
+            count++;
+          },
+        },
+      ],
+      close() {
+        done();
+      },
+      downloadMiddleware: [Deduplication()],
+    });
+    s.start(() => [
+      'http://127.0.0.1:8881/spider-a.html',
+      'http://127.0.0.1:8881/spider-a.html',
+    ]);
+  });
+  it('测试去重-超时', function(done) {
+    let time = null;
+    const s = new spider({
+      name: 'name',
+      log: false,
+      rules: [
+        {
+          test: /a\.html/,
+          async parse(url, data, $, config, spider) {
+            if (!time) {
+              time = Date.now();
+              return;
+            } else if (Date.now() - time >= 1000) {
+              done();
+            } else {
+              done('repeat!!');
+            }
+            throw 1;
+          },
+          error() {
+            s.cancel();
+          },
+        },
+      ],
+      downloadMiddleware: [Deduplication()],
+    });
+    s.plan(
+      '*/1 * * * * *',
+      () => {
+        [1, 1].forEach(() => {
+          s.push('http://127.0.0.1:8881/spider-a.html', {
+            meta: {
+              ttl: 1,
+            },
+          });
+        });
+      },
+      true
+    );
   });
 });

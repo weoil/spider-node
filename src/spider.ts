@@ -5,9 +5,6 @@ import Http from './http';
 import Rule from './rule';
 import { createLogger } from './utils/logger';
 import { ISpider, IRule, IHttp } from '../types';
-import { RedisClient } from 'redis';
-import redis from 'redis';
-import bb from 'bluebird';
 
 enum Mode {
   development,
@@ -33,15 +30,10 @@ class Spider extends EventEmitter {
   public mode: Mode = Mode.production;
   public errorMiddlewares: ISpider.ErrorMiddleware[] = [];
   public isPlan: boolean = false;
-  public redis?: RedisClient;
   private handlingCount: number = 0;
   constructor(config: ISpider.Config, http?: Http) {
     super();
     this.config = { ...this.config, ...config };
-    if (this.config.redis) {
-      const r = redis.createClient(this.config.redis);
-      this.redis = bb.promisifyAll(r);
-    }
     if (http) {
       this.http = Http.clone(http);
     } else {
@@ -50,7 +42,6 @@ class Spider extends EventEmitter {
           ...config.http,
           name: config.name,
           log: config.log,
-          redis: this.redis,
           spider: this,
         },
         config.downloadMiddleware
@@ -201,20 +192,15 @@ class Spider extends EventEmitter {
   }
   // corntab 语法定时任务 -> 秒 分 时 日 月 周几
   public plan(
-    cron: string,
+    rule: CornJobType,
     urls: startUrl,
-    immediate: boolean = true,
-    config: any = {}
+    immediate: boolean = true
   ): void {
     this.isPlan = true;
     if (immediate) {
       this.start(urls);
     }
-    const $config: any = {
-      rule: cron,
-      ...config,
-    };
-    this.cornJob = Schedule.scheduleJob($config, () => {
+    this.cornJob = Schedule.scheduleJob(rule, () => {
       if (this.getStatus()) {
         this.logger.debug(
           `定时任务因任务尚未结束被搁浅,函数执行:${
@@ -272,9 +258,14 @@ class Spider extends EventEmitter {
     if (this.cornJob) {
       this.cornJob.cancel(false);
     }
-    if (this.redis) {
-      this.redis.quit();
-    }
   }
 }
 export default Spider;
+
+type CornJobType =
+  | string
+  | number
+  | Schedule.RecurrenceRule
+  | Schedule.RecurrenceSpecDateRange
+  | Schedule.RecurrenceSpecObjLit
+  | Date;

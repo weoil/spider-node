@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-const log4js_1 = __importDefault(require("log4js"));
+var log4js_1 = __importDefault(require("log4js"));
 log4js_1.default.configure({
     appenders: {
         console: {
@@ -23,8 +23,9 @@ log4js_1.default.configure({
         },
     },
 });
-function createLogger(name, status = true) {
-    const log = log4js_1.default.getLogger(name);
+function createLogger(name, status) {
+    if (status === void 0) { status = true; }
+    var log = log4js_1.default.getLogger(name);
     log.addContext('logName', name);
     if (!status) {
         log.level = 'off';

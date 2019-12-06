@@ -1,11 +1,13 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-function $get(obj, path, defaultValue = null) {
-    const paths = path.split('.');
-    let val = obj;
+function $get(obj, path, defaultValue) {
+    if (defaultValue === void 0) { defaultValue = null; }
+    var paths = path.split('.');
+    var val = obj;
     try {
-        for (const i of paths) {
-            const tmp = val[i];
+        for (var _i = 0, paths_1 = paths; _i < paths_1.length; _i++) {
+            var i = paths_1[_i];
+            var tmp = val[i];
             if (tmp) {
                 val = tmp;
             }
@@ -20,7 +22,8 @@ function $get(obj, path, defaultValue = null) {
     }
 }
 exports.$get = $get;
-function $call(obj, key, defaultValue = null) {
+function $call(obj, key, defaultValue) {
+    if (defaultValue === void 0) { defaultValue = null; }
     if (obj && obj[key] && typeof obj[key] === 'function') {
         return obj[key]();
     }
@@ -35,7 +38,7 @@ function handlerJSONP(data) {
         .replace(/"\[/g, '[')
         .replace(/\]"/g, ']');
     // console.log(data)
-    const rdata = JSON.parse(data);
+    var rdata = JSON.parse(data);
     return rdata;
 }
 exports.handlerJSONP = handlerJSONP;
