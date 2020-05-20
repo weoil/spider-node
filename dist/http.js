@@ -181,7 +181,7 @@ var Http = /** @class */ (function (_super) {
     };
     Http.prototype.run = function (url, config) {
         return __awaiter(this, void 0, void 0, function () {
-            var rule, hasErr, $config, response, result, data, charset, error_1, delay;
+            var rule, hasErr, $config, response, result, data, charset, error_1, ruleTaskLen, delay;
             var _this = this;
             return __generator(this, function (_a) {
                 switch (_a.label) {
@@ -237,8 +237,10 @@ var Http = /** @class */ (function (_super) {
                         return [3 /*break*/, 6];
                     case 5:
                         this.connect--;
+                        ruleTaskLen = this.pool.get(rule.rule).queue
+                            .length;
                         delay = rule.config.delay || this.delay;
-                        if (delay && !hasErr) {
+                        if (ruleTaskLen > 0 && delay && !hasErr) {
                             this.logger.debug("\u7F51\u7EDC\u8BF7\u6C42\u7B49\u5F85\u5EF6\u8FDF:" + url + "," + delay);
                             setTimeout(function () {
                                 _this.complete(url, config);

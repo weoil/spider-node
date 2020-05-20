@@ -166,8 +166,10 @@ export class Http extends EventEmitter {
       this.emit('error', { url, config, error });
     } finally {
       this.connect--;
+      const ruleTaskLen = (this.pool.get(rule.rule) as IRuleParams).queue
+        .length;
       const delay = rule.config.delay || this.delay;
-      if (delay && !hasErr) {
+      if (ruleTaskLen > 0 && delay && !hasErr) {
         this.logger.debug(`网络请求等待延迟:${url},${delay}`);
         setTimeout(() => {
           this.complete(url, config);

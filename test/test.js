@@ -299,29 +299,16 @@ describe('spider', function() {
       },
       rules: [
         {
-          test: /\/cn.html/,
-          config: {
-            charset: 'gbk',
-          },
-          async parse(url, data, $, config, spider) {
-            taskCount++;
-          },
-          error(url, error) {
-            s.cancel();
-            done(error);
-          },
-        },
-        {
           test: /\/spider-\S\.html/,
           config: {
             include: false,
-            delay: 2000,
+            delay: 1000,
             http: {
               repeat: true,
             },
           },
           async parse(url, data, $, config, spider) {
-            if (taskCount === 3) {
+            if (taskCount === 1) {
               assert.equal(
                 $('.spider')
                   .text()
@@ -329,7 +316,7 @@ describe('spider', function() {
                   .trim(),
                 'a'
               );
-              if (Date.now() - startDate >= 2000) {
+              if (Date.now() - startDate >= 1000) {
                 done();
               }
             }
@@ -349,8 +336,6 @@ describe('spider', function() {
       ],
     });
     s.start([
-      'http://127.0.0.1:8881/cn.html',
-      'http://127.0.0.1:8881/cn.html',
       'http://127.0.0.1:8881/spider-a.html',
       'http://127.0.0.1:8881/spider-a.html',
     ]);
