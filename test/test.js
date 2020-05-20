@@ -407,4 +407,40 @@ describe('spider', function() {
       true
     );
   });
+
+  it('测试字符串转正则', function(done) {
+    this.timeout(3000);
+    let taskCount = 0;
+    let startDate = Date.now();
+    const s = new spider({
+      name: 'name',
+      log: false,
+      http: {
+        timeout: 1000,
+        maxConnect: 1,
+      },
+      rules: [
+        {
+          test: '/spider-\\S.html',
+          config: {
+            include: false,
+          },
+          async parse(url, data, $, config, spider) {
+            done();
+          },
+          error(url, error) {
+            s.cancel();
+            done(error);
+          },
+        },
+      ],
+      errorMiddleware: [
+        async (url, error) => {
+          s.cancel();
+          done(error);
+        },
+      ],
+    });
+    s.start(['http://127.0.0.1:8881/spider-a.html']);
+  });
 });
