@@ -2,7 +2,7 @@ import Rule from './../src/rule';
 import Spider from '../src/spider';
 import request, { RequestResponse } from 'request';
 export namespace ISpider {
-  type ErrorMiddleware = (
+  type ErrorCatch = (
     url: string,
     Error: Error,
     config: IHttp.HttpConfig,
@@ -16,11 +16,11 @@ export namespace ISpider {
       [key: string]: any;
     };
   }
-  export interface SpiderRuleConfig {
+  export interface SpiderRuleConfig<T extends any> {
     name?: string;
     test: string | RegExp;
     config?: IRule.RuleConfig;
-    parse?: IRule.RuleParse;
+    parse?: IRule.RuleParse<T>;
     pipeline?: IRule.RulePipeline;
     error?: IRule.RuleError;
   }
@@ -29,12 +29,12 @@ export namespace ISpider {
 
   export interface Config {
     name?: string;
-    rules?: Array<SpiderRuleConfig>;
+    rules?: Array<SpiderRuleConfig<any>>;
     http?: IHttp.HttpConstructorConfig;
     open?: (spider: Spider) => Promise<any>;
     close?: (spider: Spider) => Promise<any>;
-    downloadMiddleware?: IHttp.DownloadMiddleware[];
-    errorMiddleware?: ErrorMiddleware[];
+    middleware?: IHttp.Middleware[];
+    error?: ErrorCatch[];
     log?: boolean;
   }
 }
@@ -49,15 +49,15 @@ export namespace IRule {
     delay?: number;
     [key: string]: any;
   }
-  type RuleError = ISpider.ErrorMiddleware;
+  type RuleError = ISpider.ErrorCatch;
   export interface RuleHttpConfig extends IHttp.HttpResultConfig {
     meta: {
       [key: string]: any;
     };
   }
-  type RuleParse = (
+  type RuleParse<T> = (
     url: string,
-    data: string | any,
+    data: T,
     selector: CheerioSelector,
     config: RuleHttpConfig,
     spider: Spider
@@ -67,7 +67,7 @@ export namespace IRule {
 
 export namespace IHttp {
   export interface HttpRuleConfig extends IRule.RuleConfig {
-    rule: Rule;
+    rule: Rule<any>;
   }
   export interface HttpConstructorConfig extends request.CoreOptions {
     spider?: Spider;
@@ -81,7 +81,7 @@ export namespace IHttp {
     [key: string]: any;
   }
   export interface HttpConfig extends HttpConstructorConfig {
-    rule: Rule;
+    rule: Rule<any>;
   }
   export interface HttpMiddlewareConfig extends HttpConfig {
     url: string;
@@ -95,7 +95,7 @@ export namespace IHttp {
     data: any;
     config: HttpResultConfig;
   }
-  type DownloadMiddleware = (
+  type Middleware = (
     config: HttpMiddlewareConfig
   ) => Promise<HttpMiddlewareConfig | false>;
 }

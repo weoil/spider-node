@@ -24,11 +24,11 @@ class Spider extends EventEmitter {
   cornJob: Job | null = null;
   public config: ISpider.Config = {};
   public logger: Logger;
-  public rules: Rule[] = [];
+  public rules: Rule<any>[] = [];
   public http: Http;
   public status: Status = Status.Waiting;
   public mode: Mode = Mode.production;
-  public errorMiddlewares: ISpider.ErrorMiddleware[] = [];
+  public errors: ISpider.ErrorCatch[] = [];
   public isPlan: boolean = false;
   private handlingCount: number = 0;
   constructor(config: ISpider.Config, http?: Http) {
@@ -44,7 +44,7 @@ class Spider extends EventEmitter {
           log: config.log,
           spider: this,
         },
-        config.downloadMiddleware
+        config.middleware
       );
     }
     this.logger = createLogger(`${config.name}-spider-node`, config.log);
@@ -54,10 +54,8 @@ class Spider extends EventEmitter {
     if (config.rules) {
       this.initRules(config.rules);
     }
-    if (config.errorMiddleware) {
-      this.errorMiddlewares = this.errorMiddlewares.concat(
-        config.errorMiddleware
-      );
+    if (config.error) {
+      this.errors = this.errors.concat(config.error);
     }
     this.http.on('complete', this.handler.bind(this));
     this.http.on('error', this.error.bind(this));
@@ -103,10 +101,10 @@ class Spider extends EventEmitter {
       this.http.push(url, { ...ruleHttp, rule: rule, ...config }, priority);
     });
   }
-  public rule(
+  public rule<T extends any>(
     name: string,
     test: string | RegExp,
-    parse: IRule.RuleParse,
+    parse: IRule.RuleParse<T>,
     ...args: any[]
   ): Promise<any> {
     let config: IRule.RuleConfig = {};
@@ -132,8 +130,8 @@ class Spider extends EventEmitter {
     this.rules.push(rule);
     return p;
   }
-  public use(...args: IHttp.DownloadMiddleware[]): void {
-    this.http.appendMiddleware(args);
+  public use(...args: IHttp.Middleware[]): void {
+    this.http.useMiddleware(args);
   }
   private async handler(params: {
     url: string;
@@ -165,7 +163,7 @@ class Spider extends EventEmitter {
         return;
       }
       this.logger.debug(`正在提取匹配url:${url}`);
-      const urls = this.rules.reduce((set: Set<string>, rule: Rule) => {
+      const urls = this.rules.reduce((set: Set<string>, rule: Rule<any>) => {
         const cs = rule.match(url, data);
         cs.forEach((u: string) => {
           set.add(u);
@@ -186,7 +184,7 @@ class Spider extends EventEmitter {
     config: IHttp.HttpConfig;
   }) {
     const { url, error, config } = params;
-    this.errorMiddlewares.forEach((fn: ISpider.ErrorMiddleware) => {
+    this.errors.forEach((fn: ISpider.ErrorCatch) => {
       fn.call(this, url, error, config, this);
     });
   }
@@ -235,10 +233,10 @@ class Spider extends EventEmitter {
     throw new Error(`not fount Rule,url:${url}`);
   }
   public initRules(
-    rules: ISpider.SpiderRuleConfig[] | ISpider.SpiderRuleConfig
+    rules: ISpider.SpiderRuleConfig<any>[] | ISpider.SpiderRuleConfig<any>
   ) {
     const ruleArr = Array.isArray(rules) ? rules : [rules];
-    ruleArr.forEach((rule: ISpider.SpiderRuleConfig) => {
+    ruleArr.forEach((rule: ISpider.SpiderRuleConfig<any>) => {
       const r = new Rule(
         rule.name,
         rule.test,

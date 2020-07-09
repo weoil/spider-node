@@ -255,7 +255,7 @@ var Http = /** @class */ (function (_super) {
             });
         });
     };
-    Http.prototype.appendMiddleware = function (fn) {
+    Http.prototype.useMiddleware = function (fn) {
         if (Array.isArray(fn)) {
             this.middlewares = this.middlewares.concat(fn);
             return;

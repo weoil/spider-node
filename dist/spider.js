@@ -89,7 +89,7 @@ var Spider = /** @class */ (function (_super) {
         _this.rules = [];
         _this.status = Status.Waiting;
         _this.mode = Mode.production;
-        _this.errorMiddlewares = [];
+        _this.errors = [];
         _this.isPlan = false;
         _this.handlingCount = 0;
         _this.config = __assign(__assign({}, _this.config), config);
@@ -97,7 +97,7 @@ var Spider = /** @class */ (function (_super) {
             _this.http = http_1.default.clone(http);
         }
         else {
-            _this.http = new http_1.default(__assign(__assign({}, config.http), { name: config.name, log: config.log, spider: _this }), config.downloadMiddleware);
+            _this.http = new http_1.default(__assign(__assign({}, config.http), { name: config.name, log: config.log, spider: _this }), config.middleware);
         }
         _this.logger = logger_1.createLogger(config.name + "-spider-node", config.log);
         _this.init(_this.config);
@@ -110,8 +110,8 @@ var Spider = /** @class */ (function (_super) {
         if (config.rules) {
             this.initRules(config.rules);
         }
-        if (config.errorMiddleware) {
-            this.errorMiddlewares = this.errorMiddlewares.concat(config.errorMiddleware);
+        if (config.error) {
+            this.errors = this.errors.concat(config.error);
         }
         this.http.on('complete', this.handler.bind(this));
         this.http.on('error', this.error.bind(this));
@@ -194,7 +194,7 @@ var Spider = /** @class */ (function (_super) {
         for (var _i = 0; _i < arguments.length; _i++) {
             args[_i] = arguments[_i];
         }
-        this.http.appendMiddleware(args);
+        this.http.useMiddleware(args);
     };
     Spider.prototype.handler = function (params) {
         return __awaiter(this, void 0, void 0, function () {
@@ -264,7 +264,7 @@ var Spider = /** @class */ (function (_super) {
     Spider.prototype.error = function (params) {
         var _this = this;
         var url = params.url, error = params.error, config = params.config;
-        this.errorMiddlewares.forEach(function (fn) {
+        this.errors.forEach(function (fn) {
             fn.call(_this, url, error, config, _this);
         });
     };

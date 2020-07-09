@@ -49,7 +49,7 @@ describe('spider', function() {
           },
         },
       ],
-      errorMiddleware: [
+      error: [
         async (url, error) => {
           done(error);
         },
@@ -80,7 +80,7 @@ describe('spider', function() {
           },
         },
       ],
-      errorMiddleware: [
+      error: [
         async (url, error) => {
           done(error);
         },
@@ -114,7 +114,7 @@ describe('spider', function() {
           },
         },
       ],
-      errorMiddleware: [
+      error: [
         async (url, error) => {
           done(error);
         },
@@ -159,7 +159,7 @@ describe('spider', function() {
           },
         },
       ],
-      errorMiddleware: [
+      error: [
         async (url, error) => {
           done(error);
         },
@@ -194,7 +194,7 @@ describe('spider', function() {
           },
         },
       ],
-      errorMiddleware: [
+      error: [
         async (url, error) => {
           done(error);
         },
@@ -225,7 +225,7 @@ describe('spider', function() {
           },
         },
       ],
-      errorMiddleware: [
+      error: [
         async (url, error) => {
           done(error);
         },
@@ -263,7 +263,7 @@ describe('spider', function() {
           },
         },
       ],
-      downloadMiddleware: [
+      middleware: [
         (c) => {
           // console.log(count);
           if (count >= 3) {
@@ -273,7 +273,7 @@ describe('spider', function() {
           return c;
         },
       ],
-      errorMiddleware: [
+      error: [
         async (url, error) => {
           if (count === 4) {
             s.cancel();
@@ -328,7 +328,7 @@ describe('spider', function() {
           },
         },
       ],
-      errorMiddleware: [
+      error: [
         async (url, error) => {
           s.cancel();
           done(error);
@@ -360,7 +360,7 @@ describe('spider', function() {
       close() {
         done();
       },
-      downloadMiddleware: [Deduplication()],
+      middleware: [Deduplication()],
     });
     s.start(() => [
       'http://127.0.0.1:8881/spider-a.html',
@@ -391,7 +391,7 @@ describe('spider', function() {
           },
         },
       ],
-      downloadMiddleware: [Deduplication()],
+      middleware: [Deduplication()],
     });
     s.plan(
       '*/1 * * * * *',
@@ -434,7 +434,7 @@ describe('spider', function() {
           },
         },
       ],
-      errorMiddleware: [
+      error: [
         async (url, error) => {
           s.cancel();
           done(error);

@@ -13,11 +13,11 @@ import { ISpider, IRule, IHttp } from '../types';
 //   test: (data: string) => boolean
 //   call: (data: string) => any
 // }
-export class Rule {
+export class Rule<T> {
   public name?: string;
   public rule: RegExp;
   public config: IRule.RuleConfig;
-  public parse?: IRule.RuleParse;
+  public parse?: IRule.RuleParse<T>;
   public pipelines: IRule.RulePipeline[] = [];
   public error?: IRule.RuleError;
   constructor(
@@ -26,7 +26,7 @@ export class Rule {
     config: IRule.RuleConfig = {
       baseUrl: '',
     },
-    parse?: IRule.RuleParse,
+    parse?: IRule.RuleParse<T>,
     pipeline?: IRule.RulePipeline[] | IRule.RulePipeline,
     error?: IRule.RuleError
   ) {
@@ -112,8 +112,8 @@ export class Rule {
     return this.config.include === false ? false : true;
   }
 }
-export function createRule(
-  rule: ISpider.SpiderRuleConfig | ISpider.SpiderRuleConfig[]
+export function createRule<T extends any>(
+  rule: ISpider.SpiderRuleConfig<T> | ISpider.SpiderRuleConfig<T>[]
 ) {
   if (!Array.isArray(rule)) {
     rule = [rule];

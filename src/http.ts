@@ -11,7 +11,7 @@ interface IHttpTask {
   config: IHttp.HttpConfig;
 }
 interface IRuleParams {
-  rule: Rule;
+  rule: Rule<any>;
   queue: IHttpTask[];
   connect: number;
 }
@@ -23,7 +23,7 @@ export class Http extends EventEmitter {
   public delay: number = 0;
   public maxConnect: number = Infinity;
   public connect: number = 0;
-  public middlewares: IHttp.DownloadMiddleware[] = [];
+  public middlewares: IHttp.Middleware[] = [];
   public timer: NodeJS.Timeout | null = null;
   public pool: Map<RegExp, IRuleParams> = new Map<RegExp, IRuleParams>();
   // public ruleConnect: Map<RegExp | string, number> = new Map();
@@ -38,7 +38,7 @@ export class Http extends EventEmitter {
       repeat: false,
       meta: {},
     },
-    middlewares?: IHttp.DownloadMiddleware[]
+    middlewares?: IHttp.Middleware[]
   ) {
     super();
     this.logger = createLogger(`${config.name}-http`, config.log);
@@ -63,7 +63,7 @@ export class Http extends EventEmitter {
   // 		const val = this.ruleConnect.get(key.rule) || 0;
   // 	}
   // }
-  public async request(url: string, config: IHttp.HttpConfig) {
+  private async request(url: string, config: IHttp.HttpConfig) {
     const tmp: any = config;
     const result = await rp({
       url,
@@ -72,13 +72,15 @@ export class Http extends EventEmitter {
     });
     return result;
   }
+
   // 检测是否可以直接运行
-  public inspect(url: string, config: { rule: Rule }): boolean {
+  public inspect(url: string, config: { rule: Rule<any> }): boolean {
     let ruleParam = this.pool.get(config.rule.rule) as IRuleParams;
     let cur = ruleParam.connect;
     let max = config.rule.config.maxCollect || this.maxConnect;
     return cur < max;
   }
+
   public async push(
     url: string,
     config: IHttp.HttpConfig,
@@ -112,7 +114,7 @@ export class Http extends EventEmitter {
     }
     this.config.overlist.add(url);
   }
-  public async run(url: string, config: IHttp.HttpConfig): Promise<any> {
+  private async run(url: string, config: IHttp.HttpConfig): Promise<any> {
     const rule = config.rule;
     this.connect++;
     (this.pool.get(rule.rule) as IRuleParams).connect += 1;
@@ -179,9 +181,7 @@ export class Http extends EventEmitter {
       }
     }
   }
-  public appendMiddleware(
-    fn: IHttp.DownloadMiddleware | IHttp.DownloadMiddleware[]
-  ) {
+  public useMiddleware(fn: IHttp.Middleware | IHttp.Middleware[]) {
     if (Array.isArray(fn)) {
       this.middlewares = this.middlewares.concat(fn);
       return;
